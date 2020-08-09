@@ -21,9 +21,14 @@ jobs:
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
-
-    - name: .NET Core CLI
-      uses: baruchiro/github-actions@0.0.1
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1.101
+    - name: Install dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
       
     #- name: Setup MSBuild
     #  uses: microsoft/setup-msbuild@v1.0.1
