@@ -134,7 +134,7 @@
     <Reference Include="LocalPolicy">
       <HintPath>..\CustomDLL\LocalPolicy\LocalPolicy.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.GroupPolicy.Management.Interop, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=AMD64">
+    <Reference Include="Microsoft.GroupPolicy.Management.Interop">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\CustomDLL\Microsoft.GroupPolicy.Management.Interop.dll</HintPath>
     </Reference>

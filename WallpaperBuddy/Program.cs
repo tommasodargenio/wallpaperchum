@@ -520,10 +520,10 @@ namespace WallpaperBuddy
          */
         static void setLockScreenGPO(string filename)
         {
-            var gpo = new ComputerGroupPolicyObject();
+            var gpo = new LocalPolicy.ComputerGroupPolicyObject();
             const string keyPath = @"Software\Microsoft\Windows\CurrentVersion\Group Policy Objects\{1E2AC4AE-C9D5-4E5B-B2B9-F4C1FF9040F4}Machine\Software\Policies\Microsoft\Windows\Personalization";
             
-            using(var machine = gpo.GetRootRegistryKey(GroupPolicySection.Machine))
+            using(var machine = gpo.GetRootRegistryKey(LocalPolicy.GroupPolicySection.Machine))
             {
                 using(var terminalServicesKey = machine.CreateSubKey(keyPath))
                 {
