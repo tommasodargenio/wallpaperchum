@@ -34,15 +34,12 @@ jobs:
       run: nuget restore WallpaperBuddy.sln      
     - name: Build
       run: dotnet build --configuration Release --no-restore
-      
-    #- name: Setup MSBuild
-    #  uses: microsoft/setup-msbuild@v1.0.1
-      
-    #- name: Setup NuGet
-    #  uses: NuGet/setup-nuget@v1.0.2
-      
-    #- name: Restore NuGet packages
-    #  run: nuget restore WallpaperBuddy.sln
+  publish-dropbox:
+    needs: build
+    runs-on: [windows-latest]
+    steps:
+      - name: Deploy to Dropbox
+        uses: aTable/deploy-to-dropbox@v1.0.7
+        with:
+          DROPBOX_DESTINATION_PATH_PREFIX: /WallpaperBuddy
     
-    #- name: Build the solution
-    #  run: msbuild WallpaperBuddy.sln /p:Configuration=Release
