@@ -22,10 +22,8 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
 
-    - name: Setup .NET Core
-      uses: actions/setup-dotnet@v1.5.0
-    - name: Build
-      uses: dotnet build --configuration Release
+    - name: .NET Core CLI
+      uses: baruchiro/github-actions@0.0.1
       
     #- name: Setup MSBuild
     #  uses: microsoft/setup-msbuild@v1.0.1
