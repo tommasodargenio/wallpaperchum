@@ -62,7 +62,7 @@ using Microsoft.Win32;
 using System.Collections.ObjectModel;
 //using Microsoft.GroupPolicy;
 using System.Runtime.InteropServices;
-using LocalPolicy;
+//using LocalPolicy;
 using System.Net.NetworkInformation;
 using System.ServiceModel.Security.Tokens;
 
