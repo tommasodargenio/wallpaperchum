@@ -1,4 +1,5 @@
 # wallpaperbuddy
+![CI](https://github.com/tommasodargenio/wallpaperbuddy/workflows/CI/badge.svg) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 ### In a nutshell
 Wallpaper Buddy it's a small desktop app utility to download random wallpapers from a number of sources. It allows you to save the images, set them as wallpaper and much more
