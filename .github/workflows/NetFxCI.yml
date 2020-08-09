@@ -42,4 +42,4 @@ jobs:
         uses: aTable/deploy-to-dropbox@v1.0.7
         with:
           DROPBOX_DESTINATION_PATH_PREFIX: /WallpaperBuddy
-    
+          DEBUG: true    
