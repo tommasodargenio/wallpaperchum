@@ -9,13 +9,17 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
   build:
+    env:
+      PUBLISH_PATH: '.'
+
     # The type of runner that the job will run on
-    runs-on: [windows-latest]
+    runs-on: ubuntu-latest
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -34,6 +38,8 @@ jobs:
       run: nuget restore WallpaperBuddy.sln      
     - name: Build
       run: dotnet build --configuration Release --no-restore
+    - name: Publish
+      run: dotnet publish --configuration Release -o '${{env.PUBLISH_PATH}}/publish'
   publish-dropbox:
     needs: build
     runs-on: [windows-latest]
@@ -42,4 +48,5 @@ jobs:
         uses: aTable/deploy-to-dropbox@v1.0.7
         with:
           DROPBOX_DESTINATION_PATH_PREFIX: /WallpaperBuddy
+          GLOB: '${{build.env.PUBLISH_PATH}}/publish/*.*'
           DEBUG: true    
