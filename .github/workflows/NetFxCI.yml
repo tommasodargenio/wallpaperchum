@@ -38,6 +38,10 @@ jobs:
       run: nuget restore WallpaperBuddy.sln      
     - name: Build
       run: dotnet build --configuration Release --no-restore -o '${{env.PUBLISH_PATH}}/publish'
+    - name: Uploade the Build Artifact
+      uses: actions/upload-artifact@v2.1.3
+      with:
+        path: '${{env.PUBLISH_PATH}}/publish'      
   publish-dropbox:
     needs: build
     runs-on: [windows-latest]
