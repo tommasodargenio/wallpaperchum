@@ -37,9 +37,7 @@ jobs:
     - name: Restore NuGet packages
       run: nuget restore WallpaperBuddy.sln      
     - name: Build
-      run: dotnet build --configuration Release --no-restore
-    - name: Publish
-      run: dotnet publish --configuration Release -o '${{env.PUBLISH_PATH}}/publish'
+      run: dotnet build --configuration Release --no-restore -o '${{env.PUBLISH_PATH}}/publish'
   publish-dropbox:
     needs: build
     runs-on: [windows-latest]
