@@ -16,7 +16,7 @@ jobs:
   # This workflow contains a single job called "build"
   build:
     env:
-      PUBLISH_PATH:  ${{ github.workspace }}'/publish'
+      PUBLISH_PATH:  '${{ github.workspace }}/publish'
 
     # The type of runner that the job will run on
     runs-on: windows-latest
