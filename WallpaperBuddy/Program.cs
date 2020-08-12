@@ -92,6 +92,9 @@ namespace WallpaperBuddy
         public const int SPI_SETDESKWALLPAPER = 20;
         public const int SPIF_UPDATEINIFILE = 1;
         public const int SPIF_SENDCHANGE = 2;
+
+        public const String version = "1.0.0-beta.1";
+
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern int SystemParametersInfo(
           int uAction, int uParam, string lpvParam, int fuWinIni);
@@ -311,9 +314,9 @@ namespace WallpaperBuddy
 
         static void showHelp()
         {
-            Console.WriteLine("WallpaperBuddy - Bing Image Background Grabber v1.1");
-            Console.WriteLine("Download the daily background image from bing.com");
-            Console.WriteLine("\nWallpaperBuddy -saveTo [-Y] [-S] [-D #] [-L] [-W] [-region: code] [-R attributes [-renameString]] [-help]\n");
+            Console.WriteLine("Wallpaper Buddy - " + version);
+            Console.WriteLine("\nDownload random wallpapers for desktop and lockscreen");
+            Console.WriteLine("\nUsage: WallpaperBuddy [options] [-help]\n");
             
             Console.WriteLine("-saveTo folder:           specify where to save the image files");
             Console.WriteLine("-XMin resX[,xX]resY       specify the minimum resolution at which the image should be picked");
@@ -333,7 +336,7 @@ namespace WallpaperBuddy
             Console.WriteLine("-renameString string:     the string to use as prefix for sequential renaming - requires -R sA or -R sN");
             Console.WriteLine("-help:                    shows this screen");
             Console.WriteLine("");
-            Console.WriteLine(@"(1):                      This feature it's only available for Windows 8.x systems,
+            Console.WriteLine(@"(1):                      This feature it's only available for Windows 10 systems,
                           the image will be saved in the system's temp folder if the saveTo option is not specified
                           note that wallpaper image shuffle and lockscreen slide show will be disabled using this option");
             Console.WriteLine(@"(2):                      For a list of valid region/culture please refer to http://msdn.microsoft.com/en-us/library/ee825488%28v=cs.20%29.aspx");
