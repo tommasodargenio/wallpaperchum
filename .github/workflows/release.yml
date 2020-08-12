@@ -39,7 +39,7 @@ jobs:
         name: wallpaperbuddy
         path: '${{env.PUBLISH_PATH_LIN}}'            
     - name: Verify download
-      run: ls -al '${{env.PUBLISH_PATH}}' 
+      run: ls -al '${{env.PUBLISH_PATH_LIN}}' 
     - name: Upload the Artifacts to Release
       uses: skx/github-action-publish-binaries@master
       env:
