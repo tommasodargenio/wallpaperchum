@@ -21,7 +21,7 @@ jobs:
     - name: Restore NuGet packages
       run: nuget restore WallpaperBuddy.sln      
     - name: Build
-      run: dotnet build --configuration Release --no-restore
+      run: dotnet build --configuration Release --no-restore -o '${{ github.workspace }}\publish'
   deploy:
     runs-on: ubuntu-latest
     needs: [generate]
