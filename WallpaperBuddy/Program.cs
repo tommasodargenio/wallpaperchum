@@ -277,19 +277,17 @@ namespace WallpaperBuddy
                     getLocalFile = arguments["-G"];
                 }
 
-                // start the process
-                if (getLocalFile=="")
+                if (arguments.Contains("-F"))
                 {
-                    //processGrab();
-                    if (arguments.Contains("-F")) {
-                        rssURL = "";
-                        if (arguments["-F"] != null)
-                        {
-                            rssURL = arguments["-F"];
-                        }
-                        processRSS();
+                    rssURL = "";
+                    if (arguments["-F"] != null)
+                    {
+                        rssURL = arguments["-F"];
                     }
-                    
+                    processRSS();
+                } else if (getLocalFile=="")
+                {
+                    processBING();                    
                 }
                 else
                 {
@@ -807,17 +805,17 @@ namespace WallpaperBuddy
         }
 
         // Main processing actions
-        static int processGrab()
+        static int processBING()
         {
             // flag for exceptions
             bool exceptionFlag = true;
 
           
             // set the base URL
-            string bingURL = "http://www.bing.com";
-            string bingURLwithRegion = bingURL + "/?mkt=";
+            string bingURL = "https://www.bing.com/HPImageArchive.aspx?format=xml&idx=0&n=1";
+            string bingURLwithRegion = bingURL + "&mkt=";
 
-            writeLog("Start Processing...");
+
 
             // check if bing.com is up - might be down or there may be internet connection issues
             exceptionFlag = checkInternetConnection(bingURL);
@@ -836,7 +834,17 @@ namespace WallpaperBuddy
                     writeLog("ERROR: The region provided is not valid!");                  
                     Environment.Exit(104);                    
                 }
+            } else
+            {
+                bingURLwithRegion += "en-WW";
             }
+
+            writeLog("Start BING RSS download from " + bingURLwithRegion);
+
+            XmlReader reader = XmlReader.Create(bingURLwithRegion);
+
+            HtmlDocument doc = new HtmlDocument();
+
 
             // set the regexp            
             //string regexpFile = @"(g_img={url:')(?<bib>(\/?[\w\-\.]+[^#?\s]+)(\?([^#]*))?(#(.*))?)(',id:'bgDiv')";
