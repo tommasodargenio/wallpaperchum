@@ -41,10 +41,12 @@ jobs:
     - name: Verify download
       run: ls -al '${{env.PUBLISH_PATH_LIN}}' 
     - name: Prepare package
-      run: zip '${{ github.workspace }}/wallpaperbuddy-winx64-bin.zip' '${{env.PUBLISH_PATH_LIN}}/*.*' 
+      run: |
+        cd ${{env.PUBLISH_PATH_LIN}}
+        zip wallpaperbuddy-winx64-bin.zip .
     - name: Upload the Package to Release
       uses: skx/github-action-publish-binaries@master
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}            
       with:
-        args: '${{ github.workspace }}/*.zip'
+        args: '${{env.PUBLISH_PATH_LIN}}/wallpaperbuddy-winx64-bin.zip'
