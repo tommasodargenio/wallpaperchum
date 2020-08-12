@@ -40,9 +40,11 @@ jobs:
         path: '${{env.PUBLISH_PATH_LIN}}'            
     - name: Verify download
       run: ls -al '${{env.PUBLISH_PATH_LIN}}' 
-    - name: Upload the Artifacts to Release
+    - name: Prepare package
+      run: zip '${{ github.workspace }}/wallpaperbuddy.zip' '${{env.PUBLISH_PATH_LIN}}/*' 
+    - name: Upload the Package to Release
       uses: skx/github-action-publish-binaries@master
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}            
       with:
-        args: '${{env.PUBLISH_PATH_LIN}}/*.*'
+        args: '${{ github.workspace }}/*.zip'
