@@ -664,18 +664,19 @@ namespace WallpaperBuddy
             {
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
                 request.Method = "HEAD";
-
                 try
                 {
-                    HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                    using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+                    {
+                        if (response.StatusCode == HttpStatusCode.OK && response.ContentType.Contains("image"))
+                        {
+                            return true;
+                        }
+                        else
+                        {
+                            return false;
+                        }
 
-                    if (response.StatusCode == HttpStatusCode.OK && response.ContentType.Contains("image"))
-                    {
-                        return true;
-                    }
-                    else
-                    {
-                        return false;
                     }
                 }
                 catch
