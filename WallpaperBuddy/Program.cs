@@ -23,6 +23,7 @@
  * -XMin resX[,xX]resY       specify the minimum resolution at which the image should be picked
  * -XMax resX[,xX]resY       specify the maximum resolution at which the image should be picked
  * -A landscape|portrait     specify which image aspect to prefer landscape or portrait
+ * -SI:                      specify to perform a strong image validation (i.e. check if url has a real image encoding - slow method)
  * -Y:                       if the saving folder do not exists, create it
  * -S:                       silent mode, do not output stats/results in console
  * -L:                       set last downloaded image as lock screen (1)
@@ -82,6 +83,8 @@ namespace WallpaperBuddy
         public static string resolutionMin {get; set;}
         public static string resolutionMax { get; set; }
 
+        public static bool strongImageValidation { get; set; }
+
         public static string aspect { get; set; }
         public static string rssURL { get; set; }
 
@@ -92,6 +95,9 @@ namespace WallpaperBuddy
         public const int SPI_SETDESKWALLPAPER = 20;
         public const int SPIF_UPDATEINIFILE = 1;
         public const int SPIF_SENDCHANGE = 2;
+
+        public const String version = "1.0.0-beta.1";
+
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern int SystemParametersInfo(
           int uAction, int uParam, string lpvParam, int fuWinIni);
@@ -130,6 +136,16 @@ namespace WallpaperBuddy
                 {
                     setLockscreen = false;
                 }
+
+                if (arguments.Contains("-SI"))
+                {
+                    strongImageValidation = true;
+                }
+                else
+                {
+                    strongImageValidation = false;
+                }
+
 
                 if (arguments.Contains("-W"))
                 {
@@ -311,13 +327,14 @@ namespace WallpaperBuddy
 
         static void showHelp()
         {
-            Console.WriteLine("WallpaperBuddy - Bing Image Background Grabber v1.1");
-            Console.WriteLine("Download the daily background image from bing.com");
-            Console.WriteLine("\nWallpaperBuddy -saveTo [-Y] [-S] [-D #] [-L] [-W] [-region: code] [-R attributes [-renameString]] [-help]\n");
+            Console.WriteLine("Wallpaper Buddy - " + version);
+            Console.WriteLine("\nDownload random wallpapers for desktop and lockscreen");
+            Console.WriteLine("\nUsage: WallpaperBuddy [options] [-help]\n");
             
             Console.WriteLine("-saveTo folder:           specify where to save the image files");
             Console.WriteLine("-XMin resX[,xX]resY       specify the minimum resolution at which the image should be picked");
             Console.WriteLine("-XMax resX[,xX]resY       specify the maximum resolution at which the image should be picked");
+            Console.WriteLine("-SI                       specify to perform a strong image validation (i.e. check if url has a real image encoding - slow method)");
             Console.WriteLine("-A landscape | portrait   specify which image aspect to prefer landscape or portrait");
             Console.WriteLine("-F URL:                   get a random image from a Reddit RSS feed");
             Console.WriteLine("-G filename:              set the specified file as wallpaper instead of downloading from BING");
@@ -333,7 +350,7 @@ namespace WallpaperBuddy
             Console.WriteLine("-renameString string:     the string to use as prefix for sequential renaming - requires -R sA or -R sN");
             Console.WriteLine("-help:                    shows this screen");
             Console.WriteLine("");
-            Console.WriteLine(@"(1):                      This feature it's only available for Windows 8.x systems,
+            Console.WriteLine(@"(1):                      This feature it's only available for Windows 10 systems,
                           the image will be saved in the system's temp folder if the saveTo option is not specified
                           note that wallpaper image shuffle and lockscreen slide show will be disabled using this option");
             Console.WriteLine(@"(2):                      For a list of valid region/culture please refer to http://msdn.microsoft.com/en-us/library/ee825488%28v=cs.20%29.aspx");
@@ -622,7 +639,54 @@ namespace WallpaperBuddy
               SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
         }
 
+        static bool weakImageValidation(string url)
+        {
+            string imageExtension = @"(http(s?):)([/|.|\w|\s|-])*\.(?:jp(e?)g|gif|png|bmp|tiff)";
+            Regex rgx_Ext = new Regex(imageExtension);
+            Match checkExt = rgx_Ext.Match(url);
+            if (checkExt.Success)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
 
+        static bool validateImage(string url)
+        {
+            bool weakImageValid = weakImageValidation(url);
+            if (!strongImageValidation)
+            {
+                return weakImageValid;
+            } else if (weakImageValid)
+            {
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+                request.Method = "HEAD";
+
+                try
+                {
+                    HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+
+                    if (response.StatusCode == HttpStatusCode.OK && response.ContentType.Contains("image"))
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                catch
+                {
+                    return false;
+                }
+            } else
+            {
+                return false;
+            }
+        }
         static int processRSS()
         {
             string URL = "https://www.reddit.com/r/EarthPorn/.rss";
@@ -641,7 +705,9 @@ namespace WallpaperBuddy
             HtmlDocument doc = new HtmlDocument();
 
             string regexpResolution = @"(([\d ]{2,5})[x|*|X|×|,]([\d ]{2,5}))";
+            
             Regex rgx = new Regex(regexpResolution);
+            
             int counter = 0;
 
             int userResWMin = 0;
@@ -725,25 +791,20 @@ namespace WallpaperBuddy
                                         {
                                             ImagesCandidates.Add(urlFound);
                                         }
-                                        
-                                       // writeLog("Resolution: " + match.Groups[1].Value);
                                     } 
-                                    /*else
-                                    {
-                                        writeLog("Resolution too high: " + match.Groups[1].Value + " should be between "+  userResWMin.ToString() + "x" + userResHMin.ToString() + " and " + userResWMax.ToString() + "x" + userResHMax.ToString());
-                                    }*/
                                 } 
-                                /*else
-                                {
-                                    writeLog("Not a valid image, empty");
-                                }*/
                                 urlFound = "";
                                 
                             }
-                            /*else
+                            else if (urlFound != "")
                             {
-                                writeLog("Can't find resolution in title, Not a valid image");
-                            }*/
+                                // check if the url contains an image by looking at the extension                                
+                                if (validateImage(urlFound))
+                                {
+                                    ImagesCandidates.Add(urlFound);
+                                }
+                                
+                            }
                             break;
 
                     }
