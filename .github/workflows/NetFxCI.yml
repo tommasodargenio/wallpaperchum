@@ -33,7 +33,8 @@ jobs:
       run: dotnet restore
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.2
-      
+    - name: Add msbuild to PATH 
+      uses: microsoft/setup-msbuild@v1.0.1      
     - name: Restore NuGet packages
       run: nuget restore WallpaperBuddy.sln      
     - name: Build
