@@ -66,6 +66,7 @@ using System.Runtime.InteropServices;
 //using LocalPolicy;
 using System.Net.NetworkInformation;
 using System.ServiceModel.Security.Tokens;
+using System.Web;
 
 namespace WallpaperBuddy
 {
@@ -419,6 +420,18 @@ namespace WallpaperBuddy
             return imgCaption;
         }
 
+        // Clean the caption string from commas, dots, parenthesis, etc.
+        static string cleanCaption(string caption)
+        {
+            var newCaption = "";
+            string[] stringSeparators = new string[] { "(©" };
+            var result = caption.Split(stringSeparators, StringSplitOptions.None);
+            newCaption = result[0].TrimEnd().Replace(",", "_").Replace(" ", "_").Replace(".", "_");
+
+            return newCaption;
+
+        }
+
         // Process the -D option to keep the destination folder within a max number of files
         static void processDeleteMaxOption()
         {
@@ -506,6 +519,9 @@ namespace WallpaperBuddy
             HttpWebRequest request = default(HttpWebRequest);
             HttpWebResponse response = default(HttpWebResponse);
 
+            Uri domainInfo = new Uri(URL);
+            string host = domainInfo.Host;
+
             try
             {
                 request = (HttpWebRequest)WebRequest.Create(URL);
@@ -519,7 +535,7 @@ namespace WallpaperBuddy
             {
                 exceptionFlag = false;
 
-                writeLog("ERROR: There is a problem with your internet connection or bing.com is down!");
+                writeLog("ERROR: There is a problem with your internet connection or " + host + " is down!");
                 writeLog("Excepetion details: " + ex.Message);
 
                 // Exit with error
@@ -901,19 +917,181 @@ namespace WallpaperBuddy
                 bingURLwithRegion += "en-WW";
             }
 
+            string regexpResolution = @"(([\d ]{2,5})[x|*|X|×|,]([\d ]{2,5}))";
+
+            Regex rgx = new Regex(regexpResolution);
+            
+
+            int userResWMin = 0;
+            int userResHMin = 0;
+            int userResWMax = 0;
+            int userResHMax = 0;
+
+            Match userRes = rgx.Match(resolutionMin);
+            if (userRes.Success)
+            {
+                userResWMin = int.Parse(userRes.Groups[2].Value);
+                userResHMin = int.Parse(userRes.Groups[3].Value);
+            }
+
+            userRes = rgx.Match(resolutionMax);
+            if (userRes.Success)
+            {
+                userResWMax = int.Parse(userRes.Groups[2].Value);
+                userResHMax = int.Parse(userRes.Groups[3].Value);
+            }
+
+
             writeLog("Start BING RSS download from " + bingURLwithRegion);
 
             XmlReader reader = XmlReader.Create(bingURLwithRegion);
 
-            HtmlDocument doc = new HtmlDocument();
+            //HtmlDocument doc = new HtmlDocument();
 
 
-            // set the regexp            
-            //string regexpFile = @"(g_img={url:')(?<bib>(\/?[\w\-\.]+[^#?\s]+)(\?([^#]*))?(#(.*))?)(',id:'bgDiv')";
-            string regexpFile = @"(g_img={url: "")(?<bib>(\\?\/?[\w\-\.]+[^#?\s]+)(\?([^#]*))?(#(.*))?)("",id:'bgDiv')";
-            Regex rgx = new Regex(regexpFile);            
+            // set the regexp                        
+            //string regexpFile = @"(g_img={url: "")(?<bib>(\\?\/?[\w\-\.]+[^#?\s]+)(\?([^#]*))?(#(.*))?)("",id:'bgDiv')";
+            //Regex rgx = new Regex(regexpFile);
+            String urlFound = "";
+            String caption = "";
+            String imageCandidate = "";
+            while (reader.Read())
+            {
+                if (reader.IsStartElement())
+                {
+                    switch (reader.Name.ToString())
+                    {
+                        case "url":
+                            urlFound = "https://www.bing.com/" + reader.ReadString();
+                            break;
+                        case "copyright":
+                            caption = cleanCaption(reader.ReadString());
+                            break;
+                    }
+                }
+            }
 
+            // Check image size matches settings
+            Match match = rgx.Match(urlFound);
+            if (match.Success)
+            {
+                if (urlFound != "")
+                {
+                    int imageResW = int.Parse(match.Groups[2].Value);
+                    int imageResH = int.Parse(match.Groups[3].Value);
+
+                    if (!resolutionMaxAvailable)
+                    {
+                        userResHMax = imageResH;
+                        userResWMax = imageResW;
+                    }
+                    if (!resolutionMinAvailable)
+                    {
+                        userResHMin = 0;
+                        userResWMin = 0;
+                    }
+
+                    if (imageResW <= userResWMax && imageResH <= userResHMax && imageResW >= userResWMin && imageResH >= userResHMin)
+                    {
+                        if (aspect == "landscape")
+                        {
+                            if (imageResW > imageResH)
+                            {
+                                imageCandidate = urlFound;
+                            }
+                        }
+                        else if (aspect == "portrait")
+                        {
+                            if (imageResH > imageResW)
+                            {
+                                imageCandidate = urlFound;
+                            }
+                        }
+                        else
+                        {
+                            imageCandidate = urlFound;
+                        }
+                    }
+                }
+            }
+            else if (urlFound != "")
+            {
+                // check if the url contains an image by looking at the extension                                
+                if (validateImage(urlFound))
+                {
+                    imageCandidate = urlFound;
+                }
+
+            }
+
+            if (imageCandidate!="")
+            {
+                // Image found continue with the process
+                
+
+                // if argument -D # passed, check the number of files in the dest folder if more than # delete the oldest
+                if (deleteMax > 0)
+                {
+                    processDeleteMaxOption();
+                }
+
+                Uri urlFoundUri = new Uri(urlFound);
+                string fName = HttpUtility.ParseQueryString(urlFoundUri.Query).Get("id");
+                
+                var destFileName = processRenameFile(caption, fName);
+                // download the file and store in the destination folder
+                WebClient Client = new WebClient();
+                try
+                {
+                    writeLog("Trying to download image at: " + urlFound);
+
+                    var destPath = "";
+
+                    if (setLockscreen && saveFolder == "")
+                    {
+                        destPath = Path.GetTempPath();
+                    }
+                    else if (setWallpaper && saveFolder == "")
+                    {
+                        destPath = Path.GetTempPath();
+                    }
+                    else if (saveFolder != "")
+                    {
+                        destPath = saveFolder;
+                    }
+
+                    Client.DownloadFile(urlFound, destPath + Path.DirectorySeparatorChar + destFileName);
+
+                    writeLog("Image saved at: " + destPath + Path.DirectorySeparatorChar + destFileName);
+
+                    if (setLockscreen)
+                    {
+                        writeLog("Setting Lock screen...");
+                        //setLockScreenGPO(destPath + destFileName);
+                        // setLockScreen(destPath + destFileName);
+                    }
+
+                    if (setWallpaper)
+                    {
+                        writeLog("Setting Wallpaper: " + destPath + destFileName);
+                        setWallPaper(destPath + destFileName);
+                    }                
+                }
+                catch (WebException webEx)
+                {
+                    writeLog("ERROR - " + webEx.ToString());
+                    Environment.Exit(107);
+                }
+
+                return 1;
+            } else
+            {
+                writeLog("ERROR - Whoops No images were found");
+                Environment.Exit(106);
+                return 0;
+            }
             //get the page
+            /*
             var web = new HtmlWeb();
             var document = new HtmlDocument();
 
@@ -927,13 +1105,15 @@ namespace WallpaperBuddy
             {
                 document = web.Load(bingURL);                     
             }
-            
-            var page = document.DocumentNode;
 
+            var page = document.DocumentNode;
+            */
+
+            /*
             var counter = 1;
             var imgfound = false;
             var imgCaption = "";
-
+            
             // If rename option is selected and it's caption, search for it before the file
             if (rename == "c")
             {
@@ -1032,8 +1212,8 @@ namespace WallpaperBuddy
                 writeLog("ERROR - Whoops No images were found");
                 Environment.Exit(106);
                 return 0;
-            }
-            return 1;
+            }*/
+            
         }
     }
 }
