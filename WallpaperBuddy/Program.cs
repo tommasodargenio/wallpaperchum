@@ -1074,7 +1074,7 @@ namespace WallpaperBuddy
                     if (setWallpaper)
                     {
                         writeLog("Setting Wallpaper: " + destPath + destFileName);
-                        setWallPaper(destPath + destFileName);
+                        setWallPaper(destPath + Path.DirectorySeparatorChar + destFileName);
                     }                
                 }
                 catch (WebException webEx)
