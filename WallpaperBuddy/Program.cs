@@ -124,6 +124,8 @@ namespace WallpaperBuddy
         [STAThread]
         static void Main(string[] args)
         {
+            rssURL = "";
+            rssType = "";
             // check if any argument
             if (args.Length == 0)
             {
@@ -367,11 +369,12 @@ namespace WallpaperBuddy
                     getLocalFile = arguments["-G"];
                     writeLog(" setting: " + getLocalFile + " as wallpaper");
                     setWallPaper(getLocalFile);
+                    Environment.Exit(0);
                 }
 
                 if (arguments.Contains("-F"))
                 {
-                    rssURL = "";
+                   
                     if (arguments["-F"] != null)
                     {
                         switch (arguments["-F"].ToLower()) {
@@ -421,6 +424,13 @@ namespace WallpaperBuddy
                     processRSS();
                 }
 
+            }
+
+            if (rssURL == "")
+            {
+                // Exit with error
+                writeLog("ERROR - Source is missing, there is nothing else to do");
+                Environment.Exit(101);
             }
         }
 
