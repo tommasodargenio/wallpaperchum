@@ -97,6 +97,8 @@ namespace WallpaperBuddy
         public static int userResWMax { get; set; }
         public static int userResHMax { get; set; }
 
+        public static string method { get; set; }
+
         public static string rssType { get; set; }
 
         private static string urlFound = "";
@@ -174,7 +176,7 @@ namespace WallpaperBuddy
                 }
 
                 if (arguments.Contains("-XMin"))
-                {                    
+                {
                     resolutionMin = arguments["-XMin"];
                     resolutionMinAvailable = true;
                     int[] userRes = processResolution(resolutionMin);
@@ -223,7 +225,7 @@ namespace WallpaperBuddy
                     {
                         aspect = "portrait";
                     }
-                         
+
                 } else
                 {
                     aspect = "landscape";
@@ -240,8 +242,8 @@ namespace WallpaperBuddy
                 if (arguments.Contains("-R"))
                 {
                     rename = arguments["-R"];
-                } 
-                else 
+                }
+                else
                 {
                     rename = "";
                 }
@@ -293,7 +295,7 @@ namespace WallpaperBuddy
                 }
 
                 if (arguments.Contains("-saveTo"))
-                {                    
+                {
                     // check if the saveFolder exists
                     bool exists = Directory.Exists(arguments["-saveTo"]);
 
@@ -310,19 +312,36 @@ namespace WallpaperBuddy
                             // Exit with error
                             writeLog("ERROR - The specified saving path (" + arguments["-saveTo"] + ") do not exists!");
                             Environment.Exit(101);
-                        }                        
+                        }
                     }
 
                     // set the saveFolder
-                    saveFolder = arguments["-saveTo"];               
+                    saveFolder = arguments["-saveTo"];
                 }
-                else if(!arguments.Contains("-L") && !arguments.Contains("-W") && !arguments.Contains("-G"))
+                else if (!arguments.Contains("-L") && !arguments.Contains("-W") && !arguments.Contains("-G"))
                 {
                     writeLog("ERROR - You must specify a destination folder");
                     Environment.Exit(102);
                 }
 
                 getLocalFile = "";
+
+
+                if (arguments.Contains("-M"))
+                {
+                    if (arguments["-M"] == "R" || arguments["-M"] == "L" || arguments["-M"] == "Random" || arguments["-M"] == "Last")
+                    {
+                        method = arguments["-M"];
+                    } else
+                    {
+                        method = "R";
+                    }
+                    
+                }
+                else
+                {
+                    method = "R";
+                }
 
                 if (arguments.Contains("-G"))
                 {
@@ -436,6 +455,9 @@ namespace WallpaperBuddy
             Console.WriteLine("                          [D]eviantArt download from a topic on DeviantArt.com, use -C ChannelName to specify the topic");
             Console.WriteLine("-C channelName:           specify from which subreddit or deviantart topic to downloade the image from");
             Console.WriteLine("-G filename:              set the specified file as wallpaper instead of downloading from a source");
+            Console.WriteLine("-M [method]:              specify the method to use for selecting the image to download");
+            Console.WriteLine("                          [R]andom, download a random image from the channel if more than one present - default");
+            Console.WriteLine("                          [L]ast, download the most recent image from the channel");
             Console.WriteLine("-saveTo folder:           specify where to save the image files");
             Console.WriteLine("-backupTo folder:         specify a backup location where to save the image files");
 
@@ -1051,8 +1073,17 @@ namespace WallpaperBuddy
                 }
 
                 var random = new Random();
-                int idx = random.Next(imagesCandidates.Count);
-                writeLog("We picked: " + imagesCandidates[idx]);
+                int idx = 0;
+                if (method == "R" || method == "Random")
+                {
+                    idx = random.Next(imagesCandidates.Count);
+                    writeLog("We picked this random image: " + imagesCandidates[idx]);
+                }  else
+                {
+                    writeLog("We picked the most recent uploaded image: " + imagesCandidates[idx]);
+                }
+                
+                
 
                 string fName = extractFileNameFromURL(imagesCandidates[idx]);
 
