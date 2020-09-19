@@ -113,7 +113,7 @@ namespace WallpaperBuddy
         public const string REDDIT_BASE_URL = "https://www.reddit.com/r/%channel%/.rss";
         public const string DEVIANTART_BASE_URL = "https://backend.deviantart.com/rss.xml?q=%channel%";
 
-        public const string version = "1.0.0-beta.1";
+        public const string version = "1.0.0-beta.3";
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern int SystemParametersInfo(
@@ -1077,14 +1077,15 @@ namespace WallpaperBuddy
                     ServicePointManager.Expect100Continue = true;
                     ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
                     Client.DownloadFile(imagesCandidates[idx], destPath + Path.DirectorySeparatorChar + destFileName);
-
+                    writeLog("Image saved at: " + destPath + Path.DirectorySeparatorChar + destFileName);
                     // copy the file to the backup folder if defined
                     if (backupFolder!="")
                     {
                         System.IO.File.Copy(destPath + Path.DirectorySeparatorChar + destFileName, backupFolder + Path.DirectorySeparatorChar + destFileName, true);
+                        writeLog("Backup saved at: " + backupFolder + Path.DirectorySeparatorChar + destFileName);
                     }
                     
-                    writeLog("Image saved at: " + destPath + Path.DirectorySeparatorChar + destFileName);
+                    
 
                     
                     if (setWallpaper)
