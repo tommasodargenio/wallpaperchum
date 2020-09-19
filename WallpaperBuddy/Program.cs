@@ -73,6 +73,8 @@ namespace WallpaperBuddy
     class Program
     {
         public static string saveFolder { get; set; }
+        public static string backupFolder { get; set; }
+        public static string backupFilename { get; set; }
         public static bool silent { get; set; }
         public static int deleteMax { get; set; }
         public static string region { get; set; }
@@ -96,6 +98,8 @@ namespace WallpaperBuddy
         public static int userResWMax { get; set; }
         public static int userResHMax { get; set; }
 
+        public static string method { get; set; }
+
         public static string rssType { get; set; }
 
         private static string urlFound = "";
@@ -112,7 +116,7 @@ namespace WallpaperBuddy
         public const string REDDIT_BASE_URL = "https://www.reddit.com/r/%channel%/.rss";
         public const string DEVIANTART_BASE_URL = "https://backend.deviantart.com/rss.xml?q=%channel%";
 
-        public const string version = "1.0.0-beta.1";
+        public const string version = "1.0.0-beta.3";
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern int SystemParametersInfo(
@@ -121,6 +125,9 @@ namespace WallpaperBuddy
         [STAThread]
         static void Main(string[] args)
         {
+            rssURL = "";
+            rssType = "";
+           
             // check if any argument
             if (args.Length == 0)
             {
@@ -173,7 +180,7 @@ namespace WallpaperBuddy
                 }
 
                 if (arguments.Contains("-XMin"))
-                {                    
+                {
                     resolutionMin = arguments["-XMin"];
                     resolutionMinAvailable = true;
                     int[] userRes = processResolution(resolutionMin);
@@ -222,7 +229,7 @@ namespace WallpaperBuddy
                     {
                         aspect = "portrait";
                     }
-                         
+
                 } else
                 {
                     aspect = "landscape";
@@ -239,10 +246,19 @@ namespace WallpaperBuddy
                 if (arguments.Contains("-R"))
                 {
                     rename = arguments["-R"];
-                } 
-                else 
+                }
+                else
                 {
                     rename = "";
+                }
+
+                if (arguments.Contains("-backupFilename"))
+                {
+                    backupFilename = arguments["-backupFilename"];
+                }
+                else
+                {
+                    backupFilename = "";
                 }
 
                 if (arguments.Contains("-renameString"))
@@ -263,10 +279,36 @@ namespace WallpaperBuddy
                     }
                 }
 
+                backupFolder = "";
                 saveFolder = "";
 
+                if (arguments.Contains("-backupTo"))
+                {
+                    // check if the backupFolder exists
+                    bool exists = Directory.Exists(arguments["-backupTo"]);
+
+                    if (!exists)
+                    {
+                        if (arguments.Contains("-Y"))
+                        {
+                            // create the folder
+                            Directory.CreateDirectory(arguments["-backupTo"]);
+                            writeLog("Backup folder do not exists, creating... " + arguments["-backupTo"]);
+                        }
+                        else
+                        {
+                            // Exit with error
+                            writeLog("ERROR - The specified backup path (" + arguments["-backupTo"] + ") do not exists!");
+                            Environment.Exit(101);
+                        }
+                    }
+
+                    // set the backupFolder
+                    backupFolder = arguments["-backupTo"];
+                }
+
                 if (arguments.Contains("-saveTo"))
-                {                    
+                {
                     // check if the saveFolder exists
                     bool exists = Directory.Exists(arguments["-saveTo"]);
 
@@ -283,13 +325,13 @@ namespace WallpaperBuddy
                             // Exit with error
                             writeLog("ERROR - The specified saving path (" + arguments["-saveTo"] + ") do not exists!");
                             Environment.Exit(101);
-                        }                        
+                        }
                     }
 
                     // set the saveFolder
-                    saveFolder = arguments["-saveTo"];               
+                    saveFolder = arguments["-saveTo"];
                 }
-                else if(!arguments.Contains("-L") && !arguments.Contains("-W") && !arguments.Contains("-G"))
+                else if (!arguments.Contains("-L") && !arguments.Contains("-W") && !arguments.Contains("-G"))
                 {
                     writeLog("ERROR - You must specify a destination folder");
                     Environment.Exit(102);
@@ -297,15 +339,33 @@ namespace WallpaperBuddy
 
                 getLocalFile = "";
 
+
+                if (arguments.Contains("-M"))
+                {
+                    if (arguments["-M"] == "R" || arguments["-M"] == "L" || arguments["-M"] == "Random" || arguments["-M"] == "Last")
+                    {
+                        method = arguments["-M"];
+                    } else
+                    {
+                        method = "R";
+                    }
+                    
+                }
+                else
+                {
+                    method = "R";
+                }
+
                 if (arguments.Contains("-G"))
                 {
-                    bool exists = File.Exists(arguments["-G"]);
-                    bool isPNG = arguments["-G"].Contains(".png");
+                    bool exists = File.Exists(arguments["-G"]);                    
+                    bool isImage = new[] { ".png", ".gif", ".jpg", ".tiff", ".bmp", ".jpeg", ".dib", ".jfif",".jpe",".tif",".wdp" }.Any(c => arguments["-G"].Contains(c));
+                                        
 
-                    if (!isPNG)
+                    if (!isImage)
                     {
                         // Exit with error
-                        writeLog("ERROR - The specified file (" + arguments["-G"] + ") is not a PNG!");
+                        writeLog("ERROR - The specified file (" + arguments["-G"] + ") is not an image!");
                         Environment.Exit(102);
                     }
 
@@ -320,11 +380,12 @@ namespace WallpaperBuddy
                     getLocalFile = arguments["-G"];
                     writeLog(" setting: " + getLocalFile + " as wallpaper");
                     setWallPaper(getLocalFile);
+                    Environment.Exit(0);
                 }
 
                 if (arguments.Contains("-F"))
                 {
-                    rssURL = "";
+                   
                     if (arguments["-F"] != null)
                     {
                         switch (arguments["-F"].ToLower()) {
@@ -369,11 +430,22 @@ namespace WallpaperBuddy
                                 }
                                 rssType = "DEVIANTART";
                                 break;
+                            default:
+                                rssType = "";
+                                rssURL = "";
+                                break;
                         }
                     }
                     processRSS();
                 }
 
+            }
+
+            if (rssURL == "")
+            {
+                // Exit with error
+                writeLog("ERROR - Source is missing, there is nothing else to do");
+                Environment.Exit(101);
             }
         }
 
@@ -382,7 +454,12 @@ namespace WallpaperBuddy
             if (!arg.Contains("-C"))
             {
                 // Exit with error
-                writeLog("ERROR - You must specify a channel (option -C) when using Reddit or DeviantArt as source");
+                writeLog("ERROR - You must specify a channel (option -C channelname) when using Reddit or DeviantArt as source");
+                Environment.Exit(102);
+                return false;
+            } else if (arg["-C"]==null || arg["-C"]=="")
+            {
+                writeLog("ERROR - You must specify a channel (option -C channelname) when using Reddit or DeviantArt as source");
                 Environment.Exit(102);
                 return false;
             } else
@@ -403,7 +480,12 @@ namespace WallpaperBuddy
             Console.WriteLine("                          [D]eviantArt download from a topic on DeviantArt.com, use -C ChannelName to specify the topic");
             Console.WriteLine("-C channelName:           specify from which subreddit or deviantart topic to downloade the image from");
             Console.WriteLine("-G filename:              set the specified file as wallpaper instead of downloading from a source");
+            Console.WriteLine("-M [method]:              specify the method to use for selecting the image to download");
+            Console.WriteLine("                          [R]andom, download a random image from the channel if more than one present - default");
+            Console.WriteLine("                          [L]ast, download the most recent image from the channel");
             Console.WriteLine("-saveTo folder:           specify where to save the image files");
+            Console.WriteLine("-backupTo folder:         specify a backup location where to save the image files");
+            Console.WriteLine("-backupFilename filename: specify the filename to use for the image when saved in the backup folder, if not specified it will be the same as the image saved in the saveTo Folder");
 
             Console.WriteLine("-XMin resX[,xX]resY       specify the minimum resolution at which the image should be picked");
             Console.WriteLine("-XMax resX[,xX]resY       specify the maximum resolution at which the image should be picked");
@@ -422,6 +504,7 @@ namespace WallpaperBuddy
             Console.WriteLine("                          sA  a string with alphabetic seq  sN    string with numeric sequence");
             Console.WriteLine("                          sO  string only - this will overwrite any existing file with the same name");
             Console.WriteLine("-renameString string:     the string to use as prefix for sequential renaming - requires -R sA or -R sN");
+
             Console.WriteLine("-help:                    shows this screen");
             Console.WriteLine("");
             Console.WriteLine(@"(1):                      This feature it's only available for Windows 10 systems,
@@ -968,7 +1051,7 @@ namespace WallpaperBuddy
 
         static int processRSS()
         {
-            string URL = "https://www.reddit.com/r/EarthPorn/.rss";
+            string URL = "";
 
             // flag for exceptions
             bool exceptionFlag;
@@ -977,6 +1060,11 @@ namespace WallpaperBuddy
             {
                 
                 URL = rssURL;
+            } else
+            {
+                // Exit with error
+                writeLog("ERROR - Source has not been specified, there is nothing else to do");
+                Environment.Exit(101);
             }
 
             // check if source is up - might be down or there may be internet connection issues
@@ -1016,13 +1104,23 @@ namespace WallpaperBuddy
                 }
 
                 var random = new Random();
-                int idx = random.Next(imagesCandidates.Count);
-                writeLog("We picked: " + imagesCandidates[idx]);
+                int idx = 0;
+                if (method == "R" || method == "Random")
+                {
+                    idx = random.Next(imagesCandidates.Count);
+                    writeLog("We picked this random image: " + imagesCandidates[idx]);
+                }  else
+                {
+                    writeLog("We picked the most recent uploaded image: " + imagesCandidates[idx]);
+                }
+                
+                
 
                 string fName = extractFileNameFromURL(imagesCandidates[idx]);
 
 
                 string destFileName = processRenameFile(imagesCaptions[idx], fName);
+                string destBackupFileName = "";
                 WebClient Client = new WebClient();
                 try
                 {
@@ -1042,8 +1140,23 @@ namespace WallpaperBuddy
                     ServicePointManager.Expect100Continue = true;
                     ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
                     Client.DownloadFile(imagesCandidates[idx], destPath + Path.DirectorySeparatorChar + destFileName);
-
                     writeLog("Image saved at: " + destPath + Path.DirectorySeparatorChar + destFileName);
+                    // copy the file to the backup folder if defined
+                    if (backupFolder!="")
+                    {
+                        if (backupFilename!="")
+                        {
+                            string ext = Path.GetExtension(destFileName);
+                            destBackupFileName = backupFilename + ext;
+                        } else
+                        {
+                            destBackupFileName = destFileName;
+                        }
+                        System.IO.File.Copy(destPath + Path.DirectorySeparatorChar + destFileName, backupFolder + Path.DirectorySeparatorChar + destBackupFileName, true);
+                        writeLog("Backup saved at: " + backupFolder + Path.DirectorySeparatorChar + destBackupFileName);
+                    }
+                    
+                    
 
                     
                     if (setWallpaper)
