@@ -419,6 +419,10 @@ namespace WallpaperBuddy
                                 }
                                 rssType = "DEVIANTART";
                                 break;
+                            default:
+                                rssType = "";
+                                rssURL = "";
+                                break;
                         }
                     }
                     processRSS();
@@ -1035,7 +1039,7 @@ namespace WallpaperBuddy
 
         static int processRSS()
         {
-            string URL = "https://www.reddit.com/r/EarthPorn/.rss";
+            string URL = "";
 
             // flag for exceptions
             bool exceptionFlag;
@@ -1044,6 +1048,11 @@ namespace WallpaperBuddy
             {
                 
                 URL = rssURL;
+            } else
+            {
+                // Exit with error
+                writeLog("ERROR - Source has not been specified, there is nothing else to do");
+                Environment.Exit(101);
             }
 
             // check if source is up - might be down or there may be internet connection issues
