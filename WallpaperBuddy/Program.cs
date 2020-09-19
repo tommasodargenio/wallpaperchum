@@ -74,6 +74,7 @@ namespace WallpaperBuddy
     {
         public static string saveFolder { get; set; }
         public static string backupFolder { get; set; }
+        public static string backupFilename { get; set; }
         public static bool silent { get; set; }
         public static int deleteMax { get; set; }
         public static string region { get; set; }
@@ -126,6 +127,7 @@ namespace WallpaperBuddy
         {
             rssURL = "";
             rssType = "";
+           
             // check if any argument
             if (args.Length == 0)
             {
@@ -248,6 +250,15 @@ namespace WallpaperBuddy
                 else
                 {
                     rename = "";
+                }
+
+                if (arguments.Contains("-backupFilename"))
+                {
+                    backupFilename = arguments["-backupFilename"];
+                }
+                else
+                {
+                    backupFilename = "";
                 }
 
                 if (arguments.Contains("-renameString"))
@@ -474,6 +485,7 @@ namespace WallpaperBuddy
             Console.WriteLine("                          [L]ast, download the most recent image from the channel");
             Console.WriteLine("-saveTo folder:           specify where to save the image files");
             Console.WriteLine("-backupTo folder:         specify a backup location where to save the image files");
+            Console.WriteLine("-backupFilename filename: specify the filename to use for the image when saved in the backup folder, if not specified it will be the same as the image saved in the saveTo Folder");
 
             Console.WriteLine("-XMin resX[,xX]resY       specify the minimum resolution at which the image should be picked");
             Console.WriteLine("-XMax resX[,xX]resY       specify the maximum resolution at which the image should be picked");
@@ -492,6 +504,7 @@ namespace WallpaperBuddy
             Console.WriteLine("                          sA  a string with alphabetic seq  sN    string with numeric sequence");
             Console.WriteLine("                          sO  string only - this will overwrite any existing file with the same name");
             Console.WriteLine("-renameString string:     the string to use as prefix for sequential renaming - requires -R sA or -R sN");
+
             Console.WriteLine("-help:                    shows this screen");
             Console.WriteLine("");
             Console.WriteLine(@"(1):                      This feature it's only available for Windows 10 systems,
@@ -1108,6 +1121,7 @@ namespace WallpaperBuddy
 
 
                 string destFileName = processRenameFile(imagesCaptions[idx], fName);
+                string destBackupFileName = "";
                 WebClient Client = new WebClient();
                 try
                 {
@@ -1131,8 +1145,16 @@ namespace WallpaperBuddy
                     // copy the file to the backup folder if defined
                     if (backupFolder!="")
                     {
-                        System.IO.File.Copy(destPath + Path.DirectorySeparatorChar + destFileName, backupFolder + Path.DirectorySeparatorChar + destFileName, true);
-                        writeLog("Backup saved at: " + backupFolder + Path.DirectorySeparatorChar + destFileName);
+                        if (backupFilename!="")
+                        {
+                            string ext = Path.GetExtension(destFileName);
+                            destBackupFileName = backupFilename + ext;
+                        } else
+                        {
+                            destBackupFileName = destFileName;
+                        }
+                        System.IO.File.Copy(destPath + Path.DirectorySeparatorChar + destFileName, backupFolder + Path.DirectorySeparatorChar + destBackupFileName, true);
+                        writeLog("Backup saved at: " + backupFolder + Path.DirectorySeparatorChar + destBackupFileName);
                     }
                     
                     
