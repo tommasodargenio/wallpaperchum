@@ -382,7 +382,12 @@ namespace WallpaperBuddy
             if (!arg.Contains("-C"))
             {
                 // Exit with error
-                writeLog("ERROR - You must specify a channel (option -C) when using Reddit or DeviantArt as source");
+                writeLog("ERROR - You must specify a channel (option -C channelname) when using Reddit or DeviantArt as source");
+                Environment.Exit(102);
+                return false;
+            } else if (arg["-C"]==null || arg["-C"]=="")
+            {
+                writeLog("ERROR - You must specify a channel (option -C channelname) when using Reddit or DeviantArt as source");
                 Environment.Exit(102);
                 return false;
             } else
