@@ -73,6 +73,7 @@ namespace WallpaperBuddy
     class Program
     {
         public static string saveFolder { get; set; }
+        public static string backupFolder { get; set; }
         public static bool silent { get; set; }
         public static int deleteMax { get; set; }
         public static string region { get; set; }
@@ -263,7 +264,33 @@ namespace WallpaperBuddy
                     }
                 }
 
+                backupFolder = "";
                 saveFolder = "";
+
+                if (arguments.Contains("-backupTo"))
+                {
+                    // check if the backupFolder exists
+                    bool exists = Directory.Exists(arguments["-backupTo"]);
+
+                    if (!exists)
+                    {
+                        if (arguments.Contains("-Y"))
+                        {
+                            // create the folder
+                            Directory.CreateDirectory(arguments["-backupTo"]);
+                            writeLog("Backup folder do not exists, creating... " + arguments["-backupTo"]);
+                        }
+                        else
+                        {
+                            // Exit with error
+                            writeLog("ERROR - The specified backup path (" + arguments["-backupTo"] + ") do not exists!");
+                            Environment.Exit(101);
+                        }
+                    }
+
+                    // set the backupFolder
+                    backupFolder = arguments["-backupTo"];
+                }
 
                 if (arguments.Contains("-saveTo"))
                 {                    
@@ -410,6 +437,7 @@ namespace WallpaperBuddy
             Console.WriteLine("-C channelName:           specify from which subreddit or deviantart topic to downloade the image from");
             Console.WriteLine("-G filename:              set the specified file as wallpaper instead of downloading from a source");
             Console.WriteLine("-saveTo folder:           specify where to save the image files");
+            Console.WriteLine("-backupTo folder:         specify a backup location where to save the image files");
 
             Console.WriteLine("-XMin resX[,xX]resY       specify the minimum resolution at which the image should be picked");
             Console.WriteLine("-XMax resX[,xX]resY       specify the maximum resolution at which the image should be picked");
@@ -1050,6 +1078,12 @@ namespace WallpaperBuddy
                     ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
                     Client.DownloadFile(imagesCandidates[idx], destPath + Path.DirectorySeparatorChar + destFileName);
 
+                    // copy the file to the backup folder if defined
+                    if (backupFolder!="")
+                    {
+                        System.IO.File.Copy(destPath + Path.DirectorySeparatorChar + destFileName, backupFolder + Path.DirectorySeparatorChar + destFileName, true);
+                    }
+                    
                     writeLog("Image saved at: " + destPath + Path.DirectorySeparatorChar + destFileName);
 
                     
