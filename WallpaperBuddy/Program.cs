@@ -299,13 +299,14 @@ namespace WallpaperBuddy
 
                 if (arguments.Contains("-G"))
                 {
-                    bool exists = File.Exists(arguments["-G"]);
-                    bool isPNG = arguments["-G"].Contains(".png");
+                    bool exists = File.Exists(arguments["-G"]);                    
+                    bool isImage = new[] { ".png", ".gif", ".jpg", ".tiff", ".bmp", ".jpeg", ".dib", ".jfif",".jpe",".tif",".wdp" }.Any(c => arguments["-G"].Contains(c));
+                                        
 
-                    if (!isPNG)
+                    if (!isImage)
                     {
                         // Exit with error
-                        writeLog("ERROR - The specified file (" + arguments["-G"] + ") is not a PNG!");
+                        writeLog("ERROR - The specified file (" + arguments["-G"] + ") is not an image!");
                         Environment.Exit(102);
                     }
 
