@@ -67,6 +67,7 @@ using System.Runtime.InteropServices;
 using System.Net.NetworkInformation;
 using System.ServiceModel.Security.Tokens;
 using System.Web;
+using System.Reflection;
 
 namespace WallpaperBuddy
 {
@@ -105,18 +106,25 @@ namespace WallpaperBuddy
         private static string urlFound = "";
         private static List<string> imagesCaptions = new List<string>();
         private static List<string> imagesCandidates = new List<string>();
+
         // Constants used for setWallPaper
         public const int SPI_SETDESKWALLPAPER = 20;
         public const int SPIF_UPDATEINIFILE = 1;
         public const int SPIF_SENDCHANGE = 2;
 
-
+        // Internal application constants
         public const string BING_BASE_URL = "https://www.bing.com/HPImageArchive.aspx?format=xml&idx=0&n=1";
         public const string BING_REGION_BASE_PARAM = "&mkt=";
         public const string REDDIT_BASE_URL = "https://www.reddit.com/r/%channel%/.rss";
         public const string DEVIANTART_BASE_URL = "https://backend.deviantart.com/rss.xml?q=%channel%";
 
         public const string version = "1.0.0-beta.3";
+
+        // Parameters
+        private static List<string> parameters = new List<string>();
+        private static List<string> parametersHelp = new List<string>();
+        private static List<string> parametersSet = new List<string>();
+
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern int SystemParametersInfo(
@@ -127,6 +135,14 @@ namespace WallpaperBuddy
         {
             rssURL = "";
             rssType = "";
+
+            configParamaters();
+
+            if (parameters.Count() == 0)
+            {
+                writeLog("ERROR: Internal Catastrophic error - missing parameters definition");
+                Environment.Exit(102);
+            }
            
             // check if any argument
             if (args.Length == 0)
@@ -138,9 +154,24 @@ namespace WallpaperBuddy
             {
                 // process arguments
                 InputArguments arguments = new InputArguments(args);
+
+                for (int i = 0; i<parameters.Count(); i++)
+                {
+                    if (arguments.Contains(parameters[i]))
+                    {
+                        if(parametersSet[i] != null && parametersSet[i] != "")
+                        {
+                            callMethod(parametersSet[i]);
+                        }
+                    }
+                }
+
+
                 if (arguments.Contains("help"))
                 {
-                    showHelp();
+                    writeLog("LOG: Calling Help from the wrong place!");
+                    Environment.Exit(102);
+                    //showHelp();
                 }
                 if (arguments.Contains("-S"))
                 {
@@ -449,6 +480,45 @@ namespace WallpaperBuddy
             }
         }
 
+        // call a method contained in a string
+        public static void callMethod(string method)
+        {
+            try
+            {
+                Type type = typeof(Program);
+                MethodInfo methodInfo = type.GetMethod(method);
+                methodInfo.Invoke(method, null);
+            }
+            catch(Exception ex)
+            {
+                writeLog("ERROR: Exception caught while invoking the argument method " + method + " with message: " + ex.Message);
+                Environment.Exit(101);
+            }
+        }
+        static void configParamaters()
+        {
+            addParameter("Help","","showHelp");
+
+            addParameter("-F", "-F [source]:              specify the source from where to download the image\n" +
+                               "sources:                  [B]ing download from Bing Daily Wallpaper\n" +
+                               "                          [R]eddit download from a subreddit, use -C ChannelName to specify the subreddit\n" +
+                               "                          [D]eviantArt download from a topic on DeviantArt.com, use -C ChannelName to specify the topic\n", "setRSS");
+
+        }
+
+        // Add command line parameters to the main pull.
+        // @paramKey: Key string to be used on the command line to identify the parameter passed. E.g.: -H
+        // @paramHelp: Descriptive help commentary that will be displayed when help is called
+        // #paramMethod: Method that will run when this parameter is found in the argument's list
+        static void addParameter(string paramKey, string paramHelp = "", string paramMethod = "")
+        {
+            if (paramKey != null && paramKey != "")
+            {
+                parameters.Add(paramKey);
+                parametersHelp.Add(paramHelp);
+                parametersSet.Add(paramMethod);
+            }
+        }
         static bool isChannelAvailable(InputArguments arg)
         {
             if (!arg.Contains("-C"))
@@ -468,7 +538,7 @@ namespace WallpaperBuddy
             }
         }
 
-        static void showHelp()
+        public static void showHelp()
         {
             Console.WriteLine("Wallpaper Buddy - " + version);
             Console.WriteLine("\nDownload random wallpapers for desktop and lockscreen");
