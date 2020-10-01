@@ -87,6 +87,7 @@ namespace WallpaperBuddy
         public static string resolutionMin {get; set;}
         public static string resolutionMax { get; set; }
 
+        public static bool createFolders { get; set; }
         public static bool strongImageValidation { get; set; }
 
         public static string aspect { get; set; }
@@ -98,6 +99,8 @@ namespace WallpaperBuddy
         public static int userResHMin { get; set; }
         public static int userResWMax { get; set; }
         public static int userResHMax { get; set; }
+
+        public static string channelName { get; set; }
 
         public static string method { get; set; }
 
@@ -131,11 +134,240 @@ namespace WallpaperBuddy
           int uAction, int uParam, string lpvParam, int fuWinIni);
 
         [STAThread]
+
+        static void initDefaults()
+        {
+            silent = false;
+            setLockscreen = false;
+            strongImageValidation = false;
+            setWallpaper = false;
+            deleteMax = -1;
+            createFolders = false;
+            rename = "";
+
+            aspect = "landscape";
+            region = "";            
+            backupFilename = "";
+            renameString = "";
+            backupFolder = "";
+            saveFolder = "";
+            getLocalFile = "";
+            method = "R";
+            
+            // Xmin
+            resolutionMin = "0x0";
+            resolutionMinAvailable = false;
+            userResWMin = 0;
+            userResHMin = 0;
+            // Xmax
+            resolutionMax = "0x0";
+            resolutionMaxAvailable = false;
+            userResHMax = 0;
+            userResWMax = 0;
+
+        }
+
+        public void setSilent() { silent = !silent; }
+        public void setSetLockScreen() { setLockscreen = !setLockscreen; }
+        public void setStrongImageValidation() { strongImageValidation = !strongImageValidation; }
+        public void setSetWallpaper() { setWallpaper = !setWallpaper; }        
+        public void setChannelName(string param) { channelName = param; }
+        public void setCreateFolders() { createFolders = !createFolders; }
+        public void setDeleteMax(string param) { deleteMax = Convert.ToInt32(param); }
+        public void setAspect(string param) { aspect = param; }
+        public void setRegion(string param) { region = param; }
+        public void setRename(string param) { rename = param; }
+
+        public void setXMin(string param)
+        {
+            resolutionMin = param;
+            resolutionMinAvailable = true;
+            int[] userRes = processResolution(resolutionMin);
+
+            userResWMin = userRes[0];
+            userResHMin = userRes[1];
+        }
+        public void setXMax(string param)
+        {
+            resolutionMax = param;
+            resolutionMaxAvailable = true;
+            int[] userRes = processResolution(resolutionMax);
+            userResWMax = userRes[0];
+            userResHMax = userRes[1];
+        }
+        public void setRenameString(string param) 
+        { 
+            renameString = param;
+            // check that if -R sA or -R sN option is selected there is a non empty renameString otherwise return error
+            if (rename == "sA" || rename == "sN")
+            {
+                if (renameString == "")
+                {
+                    writeLog("ERROR: You need to specify a rename String with the option -R sA and -R sN");
+                    Environment.Exit(100);
+                }
+            }
+
+        }
+        public void setBackupFolder(string param) 
+        {             
+            // check if the backupFolder exists
+            bool exists = Directory.Exists(param);
+
+            if (!exists)
+            {
+                if (createFolders)
+                {
+                    // create the folder
+                    Directory.CreateDirectory(param);
+                    writeLog("Backup folder do not exists, creating... " + param);
+                }
+                else
+                {
+                    // Exit with error
+                    writeLog("ERROR - The specified backup path (" + param + ") do not exists!");
+                    Environment.Exit(101);
+                }
+            }
+
+            // set the backupFolder
+            backupFolder = param;
+        }
+        public void setSaveFolder(string param)
+        {
+            // check if the saveFolder exists
+            bool exists = Directory.Exists(param);
+
+            if (!exists)
+            {
+                if (createFolders)
+                {
+                    // create the folder
+                    Directory.CreateDirectory(param);
+                    writeLog("Saving folder do not exists, creating... " + param);
+                }
+                else
+                {
+                    // Exit with error
+                    writeLog("ERROR - The specified saving path (" + param + ") do not exists!");
+                    Environment.Exit(101);
+                }
+            }
+
+            // set the saveFolder
+            saveFolder = param;
+        }
+        public void setBackupFilename(string param) { backupFilename = param; }
+
+        public void setMethod(string param)
+        {
+            if (param == "R" || param == "L" || param == "Random" || param == "Last")
+            {
+                method = param;
+            }
+            else
+            {
+                method = "R";
+            }
+        }
+
+        public void setFileAsWallpaper(string param)
+        {
+            bool exists = File.Exists(param);
+            bool isImage = new[] { ".png", ".gif", ".jpg", ".tiff", ".bmp", ".jpeg", ".dib", ".jfif", ".jpe", ".tif", ".wdp" }.Any(c => param.Contains(c));
+
+
+            if (!isImage)
+            {
+                // Exit with error
+                writeLog("ERROR - The specified file (" + param + ") is not an image!");
+                Environment.Exit(102);
+            }
+
+            if (!exists)
+            {
+                // Exit with error
+                writeLog("ERROR - The specified file (" + param + ") doesn't exist!");
+                Environment.Exit(102);
+            }
+
+            // set the file
+            getLocalFile = param;
+            writeLog(" setting: " + getLocalFile + " as wallpaper");
+            setWallPaper(getLocalFile);
+            Environment.Exit(0);
+        }
+
+        public void setRSS(string param, string channels)
+        {
+
+            if (param != null)
+            {
+                switch (param.ToLower())
+                {
+                    case "bing":
+                    case "b":
+                        rssURL = BING_BASE_URL;
+                        rssType = "BING";
+                        // check if a region is specified and adjust the bingURL accordingly
+                        // valid region are http://msdn.microsoft.com/en-us/library/ee825488%28v=cs.20%29.aspx
+                        if (region != "")
+                        {
+                            if (IsValidCultureInfoName(region))
+                            {
+                                rssURL += BING_REGION_BASE_PARAM + region;
+                            }
+                            else
+                            {
+                                // The provided region - culture is not valid - exit with error
+                                writeLog("ERROR: The region provided is not valid!");
+                                Environment.Exit(104);
+                            }
+                        }
+                        else
+                        {
+                            rssURL += BING_REGION_BASE_PARAM + "en-WW";
+                        }
+                        break;
+                    case "reddit":
+                    case "r":
+                        if (isChannelAvailable(channels))
+                        {
+                            rssURL = REDDIT_BASE_URL;
+                            rssURL = rssURL.Replace("%channel%", channels);
+                        }
+                        rssType = "REDDIT";
+                        break;
+                    case "deviantart":
+                    case "d":
+                        if (isChannelAvailable(channels))
+                        {
+                            rssURL = DEVIANTART_BASE_URL;
+                            rssURL = rssURL.Replace("%channel%", channels);
+                        }
+                        rssType = "DEVIANTART";
+                        break;
+                    default:
+                        rssType = "";
+                        rssURL = "";
+                        break;
+                }
+                processRSS();
+            }
+            else
+            {
+                // Exit with error
+                writeLog("ERROR - You must specify a channel (option -C channelname) when using Reddit or DeviantArt as source");
+                Environment.Exit(102);                
+            }
+            
+        }
         static void Main(string[] args)
         {
             rssURL = "";
             rssType = "";
 
+            initDefaults();
             configParamaters();
 
             if (parameters.Count() == 0)
@@ -161,12 +393,12 @@ namespace WallpaperBuddy
                     {
                         if(parametersSet[i] != null && parametersSet[i] != "")
                         {
-                            callMethod(parametersSet[i]);
-                        }
+                            callMethod(parametersSet[i],arguments[parameters[i]]);
+                        } 
                     }
                 }
 
-
+                /*
                 if (arguments.Contains("help"))
                 {
                     writeLog("LOG: Calling Help from the wrong place!");
@@ -310,8 +542,7 @@ namespace WallpaperBuddy
                     }
                 }
 
-                backupFolder = "";
-                saveFolder = "";
+       
 
                 if (arguments.Contains("-backupTo"))
                 {
@@ -469,9 +700,9 @@ namespace WallpaperBuddy
                     }
                     processRSS();
                 }
-
+                */
             }
-
+             
             if (rssURL == "")
             {
                 // Exit with error
@@ -481,13 +712,14 @@ namespace WallpaperBuddy
         }
 
         // call a method contained in a string
-        public static void callMethod(string method)
+        public static void callMethod(string method, string param)
         {
             try
             {
                 Type type = typeof(Program);
                 MethodInfo methodInfo = type.GetMethod(method);
-                methodInfo.Invoke(method, null);
+                object params = new object[] { param };
+                methodInfo.Invoke(method, params);
             }
             catch(Exception ex)
             {
@@ -497,13 +729,35 @@ namespace WallpaperBuddy
         }
         static void configParamaters()
         {
-            addParameter("Help","","showHelp");
-
             addParameter("-F", "-F [source]:              specify the source from where to download the image\n" +
                                "sources:                  [B]ing download from Bing Daily Wallpaper\n" +
                                "                          [R]eddit download from a subreddit, use -C ChannelName to specify the subreddit\n" +
                                "                          [D]eviantArt download from a topic on DeviantArt.com, use -C ChannelName to specify the topic\n", "setRSS");
 
+            addParameter("-C", "-C channelName:           specify from which subreddit or deviantart topic to downloade the image from","setChannelName");
+            addParameter("-G", "-G filename:              set the specified file as wallpaper instead of downloading from a source", "setFileAsWallpaper");
+            addParameter("-M", "-M [method]:              specify the method to use for selecting the image to download\n" +
+                               "                          [R]andom, download a random image from the channel if more than one present - default\n" +
+                               "                          [L]ast, download the most recent image from the channel","setMethod");
+            addParameter("-saveTo", "-saveTo folder:           specify where to save the image files", "setSaveFolder");
+            addParameter("-backupTo", "-backupTo folder:         specify a backup location where to save the image files", "setBackupFolder");
+            addParameter("-backupFilename", "-backupFilename filename: specify the filename to use for the image when saved in the backup folder, if not specified it will be the same as the image saved in the saveTo Folder", "setBackupFilename");
+            addParameter("-XMin", "-XMin resX[,xX]resY       specify the minimum resolution at which the image should be picked", "setXMin");
+            addParameter("-XMax", "-XMax resX[,xX]resY       specify the maximum resolution at which the image should be picked", "setXMax");
+            addParameter("-SI", "-SI                       specify to perform a strong image validation (i.e. check if url has a real image encoding - slow method)", "setStrongImageValidation");
+            addParameter("-A", "-A landscape | portrait   specify which image aspect to prefer landscape or portrait", "setAspect");
+            addParameter("-Y", "-Y:                       if the saving folder do not exists, create it", "setCreateFolders");
+            addParameter("-S", "-S:                       silent mode, do not output stats/results in console", "setSilent");
+            // addParameter("-L", "-L:                       set last downloaded image as lock screen (1)", "");
+            addParameter("-W", "-W:                       set last downloaded image as desktop wallpaper (1)", "setSetWallpaper");
+            addParameter("-D", "-D #:                     keep the size of the saving folder to # files - deleting the oldest", "setDeleteMax");
+            addParameter("-region", "-region code:             [Bing only] download images specifics to a region (i.e.: en-US, ja-JP, etc.), if blank uses your internet option language setting (2)", "setRegion");
+            addParameter("-R", "-R:                       rename the file using different styles\n" +
+                               "attributes:               d   the current date and time     c     the image caption\n"+
+                               "                          sA  a string with alphabetic seq  sN    string with numeric sequence\n" +
+                               "                          sO  string only - this will overwrite any existing file with the same name", "setRename");
+            addParameter("-renameString", "-renameString string:     the string to use as prefix for sequential renaming - requires -R sA or -R sN", "setRenameString");
+            addParameter("-help", "-help:                    shows this screen", "showHelp");
         }
 
         // Add command line parameters to the main pull.
@@ -519,15 +773,16 @@ namespace WallpaperBuddy
                 parametersSet.Add(paramMethod);
             }
         }
-        static bool isChannelAvailable(InputArguments arg)
+        static bool isChannelAvailable(string channel)
         {
-            if (!arg.Contains("-C"))
+    /*        if (!arg.Contains("-C"))
             {
                 // Exit with error
                 writeLog("ERROR - You must specify a channel (option -C channelname) when using Reddit or DeviantArt as source");
                 Environment.Exit(102);
                 return false;
-            } else if (arg["-C"]==null || arg["-C"]=="")
+            } else*/
+            if (channel == null || channel == "")
             {
                 writeLog("ERROR - You must specify a channel (option -C channelname) when using Reddit or DeviantArt as source");
                 Environment.Exit(102);
@@ -543,39 +798,47 @@ namespace WallpaperBuddy
             Console.WriteLine("Wallpaper Buddy - " + version);
             Console.WriteLine("\nDownload random wallpapers for desktop and lockscreen");
             Console.WriteLine("\nUsage: WallpaperBuddy [options] [-help]\n");
+            for (int i = 0; i < parameters.Count(); i++)
+            {
+                if (parametersHelp.ElementAtOrDefault(i) != null)
+                {
+                    Console.WriteLine(parametersHelp[i]); 
+                }
+            }
+                /*
+                Console.WriteLine("-F [source]:              specify the source from where to download the image");
+                Console.WriteLine("sources:                  [B]ing download from Bing Daily Wallpaper");
+                Console.WriteLine("                          [R]eddit download from a subreddit, use -C ChannelName to specify the subreddit");
+                Console.WriteLine("                          [D]eviantArt download from a topic on DeviantArt.com, use -C ChannelName to specify the topic");
+                Console.WriteLine("-C channelName:           specify from which subreddit or deviantart topic to downloade the image from");
+                Console.WriteLine("-G filename:              set the specified file as wallpaper instead of downloading from a source");
+                Console.WriteLine("-M [method]:              specify the method to use for selecting the image to download");
+                Console.WriteLine("                          [R]andom, download a random image from the channel if more than one present - default");
+                Console.WriteLine("                          [L]ast, download the most recent image from the channel");
+                Console.WriteLine("-saveTo folder:           specify where to save the image files");
+                Console.WriteLine("-backupTo folder:         specify a backup location where to save the image files");
+                Console.WriteLine("-backupFilename filename: specify the filename to use for the image when saved in the backup folder, if not specified it will be the same as the image saved in the saveTo Folder");
 
-            Console.WriteLine("-F [source]:              specify the source from where to download the image");
-            Console.WriteLine("sources:                  [B]ing download from Bing Daily Wallpaper");
-            Console.WriteLine("                          [R]eddit download from a subreddit, use -C ChannelName to specify the subreddit");
-            Console.WriteLine("                          [D]eviantArt download from a topic on DeviantArt.com, use -C ChannelName to specify the topic");
-            Console.WriteLine("-C channelName:           specify from which subreddit or deviantart topic to downloade the image from");
-            Console.WriteLine("-G filename:              set the specified file as wallpaper instead of downloading from a source");
-            Console.WriteLine("-M [method]:              specify the method to use for selecting the image to download");
-            Console.WriteLine("                          [R]andom, download a random image from the channel if more than one present - default");
-            Console.WriteLine("                          [L]ast, download the most recent image from the channel");
-            Console.WriteLine("-saveTo folder:           specify where to save the image files");
-            Console.WriteLine("-backupTo folder:         specify a backup location where to save the image files");
-            Console.WriteLine("-backupFilename filename: specify the filename to use for the image when saved in the backup folder, if not specified it will be the same as the image saved in the saveTo Folder");
+                Console.WriteLine("-XMin resX[,xX]resY       specify the minimum resolution at which the image should be picked");
+                Console.WriteLine("-XMax resX[,xX]resY       specify the maximum resolution at which the image should be picked");
+                Console.WriteLine("-SI                       specify to perform a strong image validation (i.e. check if url has a real image encoding - slow method)");
+                Console.WriteLine("-A landscape | portrait   specify which image aspect to prefer landscape or portrait");
 
-            Console.WriteLine("-XMin resX[,xX]resY       specify the minimum resolution at which the image should be picked");
-            Console.WriteLine("-XMax resX[,xX]resY       specify the maximum resolution at which the image should be picked");
-            Console.WriteLine("-SI                       specify to perform a strong image validation (i.e. check if url has a real image encoding - slow method)");
-            Console.WriteLine("-A landscape | portrait   specify which image aspect to prefer landscape or portrait");
+                Console.WriteLine("-Y:                       if the saving folder do not exists, create it");
+                Console.WriteLine("-S:                       silent mode, do not output stats/results in console");
+                Console.WriteLine("-L:                       set last downloaded image as lock screen (1)");
+                Console.WriteLine("-W:                       set last downloaded image as desktop wallpaper (1)");
+                Console.WriteLine("-D #:                     keep the size of the saving folder to # files - deleting the oldest");
 
-            Console.WriteLine("-Y:                       if the saving folder do not exists, create it");
-            Console.WriteLine("-S:                       silent mode, do not output stats/results in console");
-            Console.WriteLine("-L:                       set last downloaded image as lock screen (1)");
-            Console.WriteLine("-W:                       set last downloaded image as desktop wallpaper (1)");
-            Console.WriteLine("-D #:                     keep the size of the saving folder to # files - deleting the oldest");
+                Console.WriteLine("-region code:             [Bing only] download images specifics to a region (i.e.: en-US, ja-JP, etc.), if blank uses your internet option language setting (2)");
+                Console.WriteLine("-R:                       rename the file using different styles");
+                Console.WriteLine("attributes:               d   the current date and time     c     the image caption");
+                Console.WriteLine("                          sA  a string with alphabetic seq  sN    string with numeric sequence");
+                Console.WriteLine("                          sO  string only - this will overwrite any existing file with the same name");
+                Console.WriteLine("-renameString string:     the string to use as prefix for sequential renaming - requires -R sA or -R sN");
 
-            Console.WriteLine("-region code:             [Bing only] download images specifics to a region (i.e.: en-US, ja-JP, etc.), if blank uses your internet option language setting (2)");
-            Console.WriteLine("-R:                       rename the file using different styles");
-            Console.WriteLine("attributes:               d   the current date and time     c     the image caption");
-            Console.WriteLine("                          sA  a string with alphabetic seq  sN    string with numeric sequence");
-            Console.WriteLine("                          sO  string only - this will overwrite any existing file with the same name");
-            Console.WriteLine("-renameString string:     the string to use as prefix for sequential renaming - requires -R sA or -R sN");
+                Console.WriteLine("-help:                    shows this screen");*/
 
-            Console.WriteLine("-help:                    shows this screen");
             Console.WriteLine("");
             Console.WriteLine(@"(1):                      This feature it's only available for Windows 10 systems,
                           the image will be saved in the system's temp folder if the saveTo option is not specified
