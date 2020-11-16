@@ -73,6 +73,7 @@ namespace WallpaperBuddy
 {
     class Program
     {
+        #region Properties
         public static string saveFolder { get; set; }
         public static string backupFolder { get; set; }
         public static string backupFilename { get; set; }
@@ -132,9 +133,9 @@ namespace WallpaperBuddy
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern int SystemParametersInfo(
           int uAction, int uParam, string lpvParam, int fuWinIni);
-
+        #endregion
         [STAThread]
-
+        #region Properties Setters
         public static void initDefaults()
         {
             silent = false;
@@ -379,6 +380,13 @@ namespace WallpaperBuddy
             }
             
         }
+        #endregion
+
+        #region Private Internal methods
+        #endregion
+        #region Public Methods
+        #endregion
+        #region Main        
         static void Main(string[] args)
         {
             rssURL = "";
@@ -415,311 +423,7 @@ namespace WallpaperBuddy
                     }
                 }
 
-                processRSS();
-
-                /*
-                if (arguments.Contains("help"))
-                {
-                    writeLog("LOG: Calling Help from the wrong place!");
-                    Environment.Exit(102);
-                    //showHelp();
-                }
-                if (arguments.Contains("-S"))
-                {
-                    silent = true;
-                }
-                else
-                {
-                    silent = false;
-                }
-
-                if (arguments.Contains("-L"))
-                {
-                    setLockscreen = true;
-                }
-                else
-                {
-                    setLockscreen = false;
-                }
-
-                if (arguments.Contains("-SI"))
-                {
-                    strongImageValidation = true;
-                }
-                else
-                {
-                    strongImageValidation = false;
-                }
-
-
-                if (arguments.Contains("-W"))
-                {
-                    setWallpaper = true;
-                }
-                else
-                {
-                    setWallpaper = false;
-                }
-
-                if (arguments.Contains("-XMin"))
-                {
-                    resolutionMin = arguments["-XMin"];
-                    resolutionMinAvailable = true;
-                    int[] userRes = processResolution(resolutionMin);
-
-                    userResWMin = userRes[0];
-                    userResHMin = userRes[1];
-                }
-                else
-                {
-                    resolutionMin = "0x0";
-                    resolutionMinAvailable = false;
-                    userResWMin = 0;
-                    userResHMin = 0;
-                }
-                if (arguments.Contains("-XMax"))
-                {
-                    resolutionMax = arguments["-XMax"];
-                    resolutionMaxAvailable = true;
-                    int[] userRes = processResolution(resolutionMax);
-                    userResWMax = userRes[0];
-                    userResHMax = userRes[1];
-                }
-                else
-                {
-                    resolutionMax = "0x0";
-                    resolutionMaxAvailable = false;
-                    userResHMax = 0;
-                    userResWMax = 0;
-                }
-
-                if (arguments.Contains("-D"))
-                {
-                    deleteMax = Convert.ToInt32(arguments["-D"]);
-                }
-                else
-                {
-                    deleteMax = -1;
-                }
-                if (arguments.Contains("-A"))
-                {
-                    if (arguments["-A"] == "landscape")
-                    {
-                        aspect = "landscape";
-                    }
-                    else
-                    {
-                        aspect = "portrait";
-                    }
-
-                } else
-                {
-                    aspect = "landscape";
-                }
-                if (arguments.Contains("-region"))
-                {
-                    region = arguments["-region"];
-                }
-                else
-                {
-                    region = "";
-                }
-
-                if (arguments.Contains("-R"))
-                {
-                    rename = arguments["-R"];
-                }
-                else
-                {
-                    rename = "";
-                }
-
-                if (arguments.Contains("-backupFilename"))
-                {
-                    backupFilename = arguments["-backupFilename"];
-                }
-                else
-                {
-                    backupFilename = "";
-                }
-
-                if (arguments.Contains("-renameString"))
-                {
-                    renameString = arguments["-renameString"];
-                }
-                else
-                {
-                    renameString = "";
-                }
-                // check that if -R sA or -R sN option is selected there is a non empty renameString otherwise return error
-                if (rename == "sA" || rename == "sN")
-                {
-                    if (renameString == "")
-                    {
-                        writeLog("ERROR: You need to specify a rename String with the option -R sA and -R sN");
-                        Environment.Exit(100);
-                    }
-                }
-
-       
-
-                if (arguments.Contains("-backupTo"))
-                {
-                    // check if the backupFolder exists
-                    bool exists = Directory.Exists(arguments["-backupTo"]);
-
-                    if (!exists)
-                    {
-                        if (arguments.Contains("-Y"))
-                        {
-                            // create the folder
-                            Directory.CreateDirectory(arguments["-backupTo"]);
-                            writeLog("Backup folder do not exists, creating... " + arguments["-backupTo"]);
-                        }
-                        else
-                        {
-                            // Exit with error
-                            writeLog("ERROR - The specified backup path (" + arguments["-backupTo"] + ") do not exists!");
-                            Environment.Exit(101);
-                        }
-                    }
-
-                    // set the backupFolder
-                    backupFolder = arguments["-backupTo"];
-                }
-
-                if (arguments.Contains("-saveTo"))
-                {
-                    // check if the saveFolder exists
-                    bool exists = Directory.Exists(arguments["-saveTo"]);
-
-                    if (!exists)
-                    {
-                        if (arguments.Contains("-Y"))
-                        {
-                            // create the folder
-                            Directory.CreateDirectory(arguments["-saveTo"]);
-                            writeLog("Saving folder do not exists, creating... " + arguments["-saveTo"]);
-                        }
-                        else
-                        {
-                            // Exit with error
-                            writeLog("ERROR - The specified saving path (" + arguments["-saveTo"] + ") do not exists!");
-                            Environment.Exit(101);
-                        }
-                    }
-
-                    // set the saveFolder
-                    saveFolder = arguments["-saveTo"];
-                }
-                else if (!arguments.Contains("-L") && !arguments.Contains("-W") && !arguments.Contains("-G"))
-                {
-                    writeLog("ERROR - You must specify a destination folder");
-                    Environment.Exit(102);
-                }
-
-                getLocalFile = "";
-
-
-                if (arguments.Contains("-M"))
-                {
-                    if (arguments["-M"] == "R" || arguments["-M"] == "L" || arguments["-M"] == "Random" || arguments["-M"] == "Last")
-                    {
-                        method = arguments["-M"];
-                    } else
-                    {
-                        method = "R";
-                    }
-                    
-                }
-                else
-                {
-                    method = "R";
-                }
-
-                if (arguments.Contains("-G"))
-                {
-                    bool exists = File.Exists(arguments["-G"]);                    
-                    bool isImage = new[] { ".png", ".gif", ".jpg", ".tiff", ".bmp", ".jpeg", ".dib", ".jfif",".jpe",".tif",".wdp" }.Any(c => arguments["-G"].Contains(c));
-                                        
-
-                    if (!isImage)
-                    {
-                        // Exit with error
-                        writeLog("ERROR - The specified file (" + arguments["-G"] + ") is not an image!");
-                        Environment.Exit(102);
-                    }
-
-                    if (!exists)
-                    {
-                        // Exit with error
-                        writeLog("ERROR - The specified file (" + arguments["-G"] + ") doesn't exist!");
-                        Environment.Exit(102);
-                    }
-
-                    // set the file
-                    getLocalFile = arguments["-G"];
-                    writeLog(" setting: " + getLocalFile + " as wallpaper");
-                    setWallPaper(getLocalFile);
-                    Environment.Exit(0);
-                }
-
-                if (arguments.Contains("-F"))
-                {
-                   
-                    if (arguments["-F"] != null)
-                    {
-                        switch (arguments["-F"].ToLower()) {
-                            case "bing":
-                            case "b":
-                                rssURL = BING_BASE_URL;
-                                rssType = "BING";
-                                // check if a region is specified and adjust the bingURL accordingly
-                                // valid region are http://msdn.microsoft.com/en-us/library/ee825488%28v=cs.20%29.aspx
-                                if (region != "")
-                                {
-                                    if (IsValidCultureInfoName(region))
-                                    {
-                                        rssURL += BING_REGION_BASE_PARAM + region;
-                                    }
-                                    else
-                                    {
-                                        // The provided region - culture is not valid - exit with error
-                                        writeLog("ERROR: The region provided is not valid!");
-                                        Environment.Exit(104);
-                                    }
-                                }
-                                else
-                                {
-                                    rssURL += BING_REGION_BASE_PARAM + "en-WW";
-                                }
-                                break;
-                            case "reddit":
-                            case "r":
-                                if (isChannelAvailable(arguments))
-                                {
-                                    rssURL = REDDIT_BASE_URL;
-                                    rssURL = rssURL.Replace("%channel%", arguments["-C"]);
-                                }
-                                rssType = "REDDIT";
-                                break;
-                            case "deviantart":
-                            case "d":
-                                if (isChannelAvailable(arguments)) {
-                                    rssURL = DEVIANTART_BASE_URL;
-                                    rssURL = rssURL.Replace("%channel%", arguments["-C"]);
-                                }
-                                rssType = "DEVIANTART";
-                                break;
-                            default:
-                                rssType = "";
-                                rssURL = "";
-                                break;
-                        }
-                    }
-                    processRSS();
-                }
-                */
+                processRSS();                
             }
              
             if (rssURL == "")
@@ -729,7 +433,7 @@ namespace WallpaperBuddy
                 Environment.Exit(101);
             }
         }
-
+        #endregion
         // call a method contained in a string
         public static void callMethod(string method, string param)
         {
