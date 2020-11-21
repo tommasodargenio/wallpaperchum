@@ -59,6 +59,15 @@ namespace WallpaperBuddy
         {
             return str.StartsWith(_keyLeadingPattern);
         }
+        public int Count()
+        {
+            return _parsedArguments.Count();
+        }
+
+        public IDictionary<string,string> ToDictionary()
+        {
+            return _parsedArguments;
+        }
         #endregion
  
         #region internal methods
