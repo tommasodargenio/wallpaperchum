@@ -88,11 +88,14 @@ namespace WallpaperBuddy
         public const string appFullName = "Wallpaper Buddy";
         public const string appRuntimeName = "wallpaperbuddy";
         public const string appDescription = "This is the description";
-        public const string version = "1.0.0-beta.3";
+        public const string version = "1.0.0-beta.4";
+
+        public const string FullVersionToString = appFullName + " v" + version + "\n" + appDescription;
+        public const string ShortVersionToString = appFullName + " v" + version;        
     }
 
 
-    [VersionOption(Globals.appFullName + " v" + Globals.version + "\n" + Globals.appDescription)]
+    [VersionOption(Globals.FullVersionToString)]
     public class Program
     {
         #region Private Properties
