@@ -82,6 +82,17 @@ namespace WallpaperBuddy
         WRONG_PARAMETER = 104,
         UNKNOWN_ERROR = 200
     }
+
+    static class Globals
+    {
+        public const string appFullName = "Wallpaper Buddy";
+        public const string appRuntimeName = "wallpaperbuddy";
+        public const string appDescription = "This is the description";
+        public const string version = "1.0.0-beta.3";
+    }
+
+
+    [VersionOption(Globals.appFullName + " v" + Globals.version + "\n" + Globals.appDescription)]
     public class Program
     {
         #region Private Properties
@@ -162,66 +173,68 @@ namespace WallpaperBuddy
         public  int userResWMax { get; set; }
         public  int userResHMax { get; set; }
 
-        [Option("-F", CommandOptionType.SingleValue, Description = "-F [source]:\t\tspecify the source from where to download the image\n" +
-                               "sources:\t\t[B]ing download from Bing Daily Wallpaper\n" +
-                               "\t\t[R]eddit download from a subreddit, use -C ChannelName to specify the subreddit\n" +
-                               "\t\t[D]eviantArt download from a topic on DeviantArt.com, use -C ChannelName to specify the topic\n")]
+       
+        
+        [Option("-F", CommandOptionType.SingleValue, Description = "[source]:\t\tspecify the source from where to download the image\n" +
+                               "\t\t\t[B]ing download from Bing Daily Wallpaper\n" +
+                               "\t\t\t[R]eddit download from a subreddit, use -C ChannelName to specify the subreddit\n" +
+                               "\t\t\t[D]eviantArt download from a topic on DeviantArt.com, use -C ChannelName to specify the topic\n")]
         public string rssType { get { return _rssType; } set { setRSS(value); } }
 
-        [Option("-C", CommandOptionType.SingleValue, Description = "-C channelName:\t\tspecify from which subreddit or deviantart topic to downloade the image from")]
+        [Option("-C", CommandOptionType.SingleValue, Description = "channelName:\t\tspecify from which subreddit or deviantart topic to downloade the image from")]
         public string channelName { get { return _channelName; } set { setChannelName(value); } }
 
-        [Option("-Y", CommandOptionType.NoValue, Description = "-Y:\t\tif the saving folder do not exists, create it")]
+        [Option("-Y", CommandOptionType.NoValue, Description = "\t\t\tif the saving folder do not exists, create it")]
         public bool createFolders { get { return _createFolders; } set { _createFolders = true; } }
 
-        [Option("-G", CommandOptionType.SingleValue, Description = "-G filename:\t\tset the specified file as wallpaper instead of downloading from a source")]
+        [Option("-G", CommandOptionType.SingleValue, Description = "filename:\t\tset the specified file as wallpaper instead of downloading from a source")]
         public string setStaticWallpaper { get { return _setStaticWallpaper; } set { setFileAsWallpaper(value); } }
 
-        [Option("-M", CommandOptionType.SingleValue, Description = "-M[method]:\t\tspecify the method to use for selecting the image to download\n" +
-                                                                   "\t\t[R]andom, download a random image from the channel if more than one present - default\n" +
-                                                                   "\t\t[L]ast, download the most recent image from the channel")]
+        [Option("-M", CommandOptionType.SingleValue, Description = "[method]:\t\tspecify the method to use for selecting the image to download\n" +
+                                                                   "\t\t\t[R]andom, download a random image from the channel if more than one present - default\n" +
+                                                                   "\t\t\t[L]ast, download the most recent image from the channel")]
         public string method { get { return _method; } set { setMethod(value); } }
 
-        [Option("-saveTo", CommandOptionType.SingleValue, Description = "-saveTo folder:\t\tspecify where to save the image files")]
+        [Option("-saveTo", CommandOptionType.SingleValue, Description = "folder:\t\tspecify where to save the image files")]
         public string saveFolder { get { return _saveFolder; } set { setSaveFolder(value); } }
 
-        [Option("-backupTo", CommandOptionType.SingleValue, Description = "-backupTo folder:\t\tspecify a backup location where to save the image files")]
+        [Option("-backupTo", CommandOptionType.SingleValue, Description = "folder:\t\tspecify a backup location where to save the image files")]
         public string backupFolder { get { return _backupFolder; } set { setBackupFolder(value); } }
 
-        [Option("-backupFilename", CommandOptionType.SingleValue, Description = "-backupFilename filename: specify the filename to use for the image when saved in the backup folder, if not specified it will be the same as the image saved in the saveTo Folder")]
+        [Option("-backupFilename", CommandOptionType.SingleValue, Description = "filename:\t\tspecify the filename to use for the image when saved in the backup folder,\n\t\t\tif not specified it will be the same as the image saved in the saveTo Folder")]
         public string backupFilename { get { return _backupFilename; } set { _backupFilename = value; } }
 
-        [Option("-XMin", CommandOptionType.SingleValue, Description = "-XMin resX[,xX]resY\t\tspecify the minimum resolution at which the image should be picked")]
+        [Option("-XMin", CommandOptionType.SingleValue, Description = "resX[,xX]resY\tspecify the minimum resolution at which the image should be picked")]
         public string resolutionMin { get { return _resolutionMin; } set { setXMin(value); } }
 
-        [Option("-XMax", CommandOptionType.SingleValue, Description = "-XMax resX[,xX]resY\t\tspecify the maximum resolution at which the image should be picked")]
+        [Option("-XMax", CommandOptionType.SingleValue, Description = "resX[,xX]resY\tspecify the maximum resolution at which the image should be picked")]
         public string resolutionMax { get { return _resolutionMax; } set { setXMax(value); } }
 
-        [Option("-SI", CommandOptionType.NoValue, Description = "-SI\t\tperform a strong image validation (i.e. check if url has a real image encoding - slow method")]
+        [Option("-SI", CommandOptionType.NoValue, Description = "\t\t\tperform a strong image validation (i.e. check if url has a real image encoding - slow method")]
         public bool strongImageValidation { get { return _strongImageValidation; } set { _strongImageValidation = true; } }
         
-        [Option("-A", CommandOptionType.SingleValue, Description = "-A landscape | portrait\tspecify which image aspect to prefer landscape or portrait")]
+        [Option("-A", CommandOptionType.SingleValue, Description = "landscape | portrait\tspecify which image aspect to prefer landscape or portrait")]
         public string aspect { get { return _aspect; } set { setAspect(new string[] { "landscape", "portrait" },value); } }
         
-        [Option("-S", CommandOptionType.NoValue, Description = "-S:\t\tsilent mode, do not output stats/results in console")]
+        [Option("-S", CommandOptionType.NoValue, Description = "\t\t\tsilent mode, do not output stats/results in console")]
         public bool silent { get { return _silent; } set { _silent = true; } }
         
-        [Option("-W", CommandOptionType.SingleValue, Description = "-W:\t\tset last downloaded image as desktop wallpaper (1)")]
+        [Option("-W", CommandOptionType.SingleValue, Description = "\t\t\tset last downloaded image as desktop wallpaper (1)")]
         public  bool setWallpaper { get { return _setWallpaper; } set { _setWallpaper = true; } }
 
-        [Option("-D", CommandOptionType.SingleValue, Description = "-D #:\t\tkeep the size of the saving folder to # files - deleting the oldest")]
+        [Option("-D", CommandOptionType.SingleValue, Description = "#:\t\t\tkeep the size of the saving folder to # files - deleting the oldest")]
         public int deleteMax { get { return _deleteMax; } set { _deleteMax = Convert.ToInt32(value); } }
 
-        [Option("-region", CommandOptionType.SingleValue, Description = "-region code:\t\t[Bing only] download images specifics to a region (i.e.: en-US, ja-JP, etc.), if blank uses your internet option language setting (2)")]
+        [Option("-region", CommandOptionType.SingleValue, Description = "code:\t\t[Bing only] download images specifics to a region (i.e.: en-US, ja-JP, etc.), if blank uses your internet option language setting (2)")]
         public string region { get { return _region; } set { _region = value; } }
         // addParameter("-L", "-L:                       set last downloaded image as lock screen (1)", "");
-        [Option("-R", CommandOptionType.SingleValue, Description = "-R:\t\trename the file using different styles\n" +
+        [Option("-R", CommandOptionType.SingleValue, Description = "\t\t\trename the file using different styles\n" +
                                                                     "attributes:\t\td   the current date and time     c     the image caption\n" +
-                                                                    "\t\tsA  a string with alphabetic seq  sN    string with numeric sequence\n" +
-                                                                    "\t\tsO  string only - this will overwrite any existing file with the same name")]
+                                                                    "\t\t\tsA  a string with alphabetic seq  sN    string with numeric sequence\n" +
+                                                                    "\t\t\tsO  string only - this will overwrite any existing file with the same name")]
         public string rename { get { return _rename; } set { _rename = value; } }
     
-        [Option("-renameString", CommandOptionType.SingleValue, Description = "-renameString string:\tthe string to use as prefix for sequential renaming - requires -R sA or -R sN")]
+        [Option("-renameString", CommandOptionType.SingleValue, Description = "string:\t\tthe string to use as prefix for sequential renaming - requires -R sA or -R sN")]
         public string renameString { get { return _renameString; } set { _renameString = value; } }
         
         //addParameter("-help", "-help:                    shows this screen", "showHelp");
@@ -248,8 +261,6 @@ namespace WallpaperBuddy
         public const string BING_REGION_BASE_PARAM = "&mkt=";
         public const string REDDIT_BASE_URL = "https://www.reddit.com/r/%channel%/.rss";
         public const string DEVIANTART_BASE_URL = "https://backend.deviantart.com/rss.xml?q=%channel%";
-
-        public const string version = "1.0.0-beta.3";
         #endregion
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
@@ -511,7 +522,7 @@ namespace WallpaperBuddy
             {
                 // Exit with error
                 writeLog("ERROR - You must specify one of the following types: [B] for Bing, [R] for Reddit, [D] for DeviantArt");
-                Environment.Exit(102);
+                Environment.Exit((int)ExitCode.WRONG_PARAMETER);
             }
 
         }
@@ -581,13 +592,26 @@ namespace WallpaperBuddy
         #region Public Methods
         #endregion
         #region Main        
+        
         public static void Main(string[] args)
             => CommandLineApplication.Execute<Program>(args);
+
         
+
         private void OnExecute()
         {
-           // writeLog(rssTypeAlt);
-           // writeLog(whatever);
+            // writeLog(rssTypeAlt);
+            // writeLog(whatever);
+            initDefaults();
+            processRSS();
+
+            if (_rssURL == "")
+            {
+                // Exit with error
+                writeLog("ERROR - Source is missing, there is nothing else to do");
+                Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
+            }
+
         }
         /*static void Main(string[] args)
         {
@@ -722,7 +746,7 @@ namespace WallpaperBuddy
                 parametersSet.Add(paramMethod);
             }
         }*/
-        static bool isChannelAvailable(string channel)
+        public bool isChannelAvailable(string channel)
         {
     /*        if (!arg.Contains("-C"))
             {
@@ -734,7 +758,7 @@ namespace WallpaperBuddy
             if (channel == null || channel == "")
             {
                 writeLog("ERROR - You must specify a channel (option -C channelname) when using Reddit or DeviantArt as source");
-                Environment.Exit(102);
+                Environment.Exit((int)ExitCode.WRONG_PARAMETER);
                 return false;
             } else
             {
@@ -822,7 +846,7 @@ namespace WallpaperBuddy
         }
 
         // Output a log message to the stdout if silent option is off
-        static void writeLog(string message)
+        public void writeLog(string message)
         {
             if (!silent)
             {
@@ -832,7 +856,7 @@ namespace WallpaperBuddy
         }
 
         // Process the image caption if required
-        static string processCaption(HtmlAgilityPack.HtmlNode document)
+        public string processCaption(HtmlAgilityPack.HtmlNode document)
         {
             var anchorNodes = document.SelectNodes("//a[contains(@id,'sh_cp')]");
             var imgCaption = "";
@@ -861,7 +885,7 @@ namespace WallpaperBuddy
         }
 
         // Clean the caption string from commas, dots, parenthesis, etc.
-        static string cleanCaption(string caption)
+        public string cleanCaption(string caption)
         {
             var newCaption = "";
             string[] stringSeparators = new string[] { "(©" };
@@ -873,7 +897,7 @@ namespace WallpaperBuddy
         }
 
         // Process the -D option to keep the destination folder within a max number of files
-        private void processDeleteMaxOption()
+        public void processDeleteMaxOption()
         {
             if (File.Exists(saveFolder + Path.DirectorySeparatorChar + "Thumbs.db"))
             {
@@ -898,7 +922,7 @@ namespace WallpaperBuddy
             }
         }
 
-        private static string MakeValidFileName(string name)
+        private string MakeValidFileName(string name)
         {
             string invalidChars = System.Text.RegularExpressions.Regex.Escape(new string(System.IO.Path.GetInvalidFileNameChars()));
             string invalidRegStr = string.Format(@"([{0}]*\.+$)|([{0}]+)", invalidChars);
@@ -982,7 +1006,7 @@ namespace WallpaperBuddy
             return destFileName;
         }
 
-        static bool checkInternetConnection(string URL)
+        public bool checkInternetConnection(string URL)
         {
             bool exceptionFlag = true;
 
@@ -1020,7 +1044,7 @@ namespace WallpaperBuddy
          * ref: http://www.lshift.net/blog/2013/03/25/programmatically-updating-local-policy-in-windows/
          * author: Martin Eden
          */
-        static void setLockScreenGPO(string filename)
+        public void setLockScreenGPO(string filename)
         {
             var gpo = new LocalPolicy.ComputerGroupPolicyObject();
             const string keyPath = @"Software\Microsoft\Windows\CurrentVersion\Group Policy Objects\{1E2AC4AE-C9D5-4E5B-B2B9-F4C1FF9040F4}Machine\Software\Policies\Microsoft\Windows\Personalization";
@@ -1037,7 +1061,7 @@ namespace WallpaperBuddy
             gpo.Save();
         }
 
-        static void setLockScreenRegistry(string filename)
+        public void setLockScreenRegistry(string filename)
         {
 
             RegistryKey myKey;
@@ -1117,14 +1141,14 @@ namespace WallpaperBuddy
             }
         }
         */
-        static void setWallPaper(string filename)
+        public void setWallPaper(string filename)
         {
             SystemParametersInfo(
               SPI_SETDESKWALLPAPER, 0, filename,
               SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
         }
 
-        static bool weakImageValidation(string url)
+        public bool weakImageValidation(string url)
         {
             string imageExtension = @"(http(s?):)([/|.|\w|\s|-])*\.(?:jp(e?)g|gif|png|bmp|tiff)";
             Regex rgx_Ext = new Regex(imageExtension);
@@ -1139,7 +1163,7 @@ namespace WallpaperBuddy
             }
         }
 
-        static bool validateImage(string url)
+        public bool validateImage(string url)
         {
             bool weakImageValid = weakImageValidation(url);
             if (!strongImageValidation)
@@ -1174,7 +1198,7 @@ namespace WallpaperBuddy
             }
         }
 
-        static bool extractImage(string URL)
+        public bool extractImage(string URL)
         {
             int[] imageRes = processResolution(URL);
 
@@ -1230,7 +1254,7 @@ namespace WallpaperBuddy
             return false;
         }
 
-        static void processBingXML(XmlReader reader)
+        public void processBingXML(XmlReader reader)
         {
             string caption = "";
             HtmlDocument doc = new HtmlDocument();
@@ -1257,11 +1281,11 @@ namespace WallpaperBuddy
             
         }
 
-        static void processDeviantXML(XmlReader reader)
+        public void processDeviantXML(XmlReader reader)
         {
 
         }
-        static void processRedditXML(XmlReader reader)
+        public void processRedditXML(XmlReader reader)
         {
             HtmlDocument doc = new HtmlDocument();
 
@@ -1294,7 +1318,7 @@ namespace WallpaperBuddy
 
         /* Breaks down the min and max resolution constraints defined in the resolution paramenter. This could be the user defined resolution from the command line or coming from the image title
            Return an array of integer representing Width, Height*/
-        static int[] processResolution(string resolution)
+        public int[] processResolution(string resolution)
         {
             string regexpResolution = @"(([\d ]{2,5})[x|*|X|×|,]([\d ]{2,5}))";
             int[] processedRes = new int[2];
@@ -1312,8 +1336,8 @@ namespace WallpaperBuddy
             processedRes[1] = userResH;
             return processedRes;
         }
-         
-        static string extractFileNameFromURL(string URL)
+
+        public string extractFileNameFromURL(string URL)
         {
             Uri urlFoundUri = new Uri(URL);
             string fileName = "";
@@ -1332,17 +1356,17 @@ namespace WallpaperBuddy
             return fileName;
         }
 
-        static int processRSS()
+        private int processRSS()
         {
             string URL = "";
 
             // flag for exceptions
             bool exceptionFlag;
 
-            if (rssURL != "")
+            if (_rssURL != "")
             {
                 
-                URL = rssURL;
+                URL = _rssURL;
             } else
             {
                 // Exit with error
@@ -1470,7 +1494,7 @@ namespace WallpaperBuddy
                 catch (WebException webEx)
                 {
                     writeLog("ERROR - " + webEx.ToString());
-                    Environment.Exit(107);
+                    Environment.Exit((int)ExitCode.EXCEPTION_ERROR);
                 }
 
 
