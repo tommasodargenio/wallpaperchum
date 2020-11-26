@@ -48,27 +48,14 @@ using System.Xml;
 using System.Collections.Generic;
 using System.Linq;
 using McMaster.Extensions.CommandLineUtils;
-//using System.Windows;
-//using System.Text;
-//using System.Threading.Tasks;
 using System.IO;
 using HtmlAgilityPack;
 using System.Text.RegularExpressions; 
 using System.Net;
 using System.Globalization;
-/*using Windows.System.UserProfile;
-using Windows.Storage.Streams;
-using Windows.Storage;*/
-//using System.Windows.Media.Imaging;
 using Microsoft.Win32;
-//using System.Collections.ObjectModel;
-//using Microsoft.GroupPolicy;
 using System.Runtime.InteropServices;
-//using LocalPolicy;
-//using System.Net.NetworkInformation;
-//using System.ServiceModel.Security.Tokens;
 using System.Web;
-//using System.Reflection;
 
 namespace WallpaperBuddy
 {
