@@ -47,9 +47,10 @@ using System;
 using System.Xml;
 using System.Collections.Generic;
 using System.Linq;
-using System.Windows;
-using System.Text;
-using System.Threading.Tasks;
+using McMaster.Extensions.CommandLineUtils;
+//using System.Windows;
+//using System.Text;
+//using System.Threading.Tasks;
 using System.IO;
 using HtmlAgilityPack;
 using System.Text.RegularExpressions; 
@@ -58,460 +59,478 @@ using System.Globalization;
 /*using Windows.System.UserProfile;
 using Windows.Storage.Streams;
 using Windows.Storage;*/
-using System.Windows.Media.Imaging;
+//using System.Windows.Media.Imaging;
 using Microsoft.Win32;
-using System.Collections.ObjectModel;
+//using System.Collections.ObjectModel;
 //using Microsoft.GroupPolicy;
 using System.Runtime.InteropServices;
 //using LocalPolicy;
-using System.Net.NetworkInformation;
-using System.ServiceModel.Security.Tokens;
+//using System.Net.NetworkInformation;
+//using System.ServiceModel.Security.Tokens;
 using System.Web;
+//using System.Reflection;
 
 namespace WallpaperBuddy
 {
-    class Program
+    internal enum ExitCode : int
     {
-        public static string saveFolder { get; set; }
-        public static string backupFolder { get; set; }
-        public static string backupFilename { get; set; }
-        public static bool silent { get; set; }
-        public static int deleteMax { get; set; }
-        public static string region { get; set; }
-        public static string rename { get; set; }
-        public static string renameString { get; set; }
-        public static bool setLockscreen { get; set; }
-        public static bool setWallpaper { get; set; }
-        public static string getLocalFile { get; set; }
-        public static string resolutionMin {get; set;}
-        public static string resolutionMax { get; set; }
+        SUCCESS = 0,
+        EXCEPTION_ERROR = 100,
+        MISSING_REQUIRED_PARAMETER = 101,
+        CANT_INSTANCIATE_CLASS = 102,
+        CALLBACK_NOT_FOUND_OR_INVALID = 103,
+        WRONG_PARAMETER = 104,
+        UNKNOWN_ERROR = 200
+    }
 
-        public static bool strongImageValidation { get; set; }
+    static class appIdentity
+    {
+        public const string appFullName = "Wallpaper Buddy";
+        public const string appRuntimeName = "wallpaperbuddy";
+        public const string appDescription = "Download random wallpapers for desktop and lockscreen";
+        public const string appUsage = "Usage: WallpaperBuddy [options] [-help]";
+        public const string version = "1.0.0-beta.4";
 
-        public static string aspect { get; set; }
-        public static string rssURL { get; set; }
+        public const string FullVersionToString = appFullName + " v" + version + "\n" + appDescription + "\n\n" + appUsage + "\n\n";
+        public const string ShortVersionToString = appFullName + " v" + version;        
+    }
 
-        public static bool resolutionMaxAvailable { get; set; }
-        public static bool resolutionMinAvailable { get; set; }
-        public static int userResWMin { get; set; }
-        public static int userResHMin { get; set; }
-        public static int userResWMax { get; set; }
-        public static int userResHMax { get; set; }
 
-        public static string method { get; set; }
+    [VersionOption(appIdentity.FullVersionToString)]
+    public class Program
+    {
+        #region Private Properties
+        private string _saveFolder;
+        private string _backupFolder;
+        private string _backupFilename;
+        private bool _silent;
+        private int _deleteMax;
+        private string _region;
+        private string _rename;
+        private string _renameString;
+        private bool _setLockscreen;
+        private bool _setWallpaper;
+        private string _getLocalFile;
+        private string _resolutionMin;
+        private string _resolutionMax;
+        private bool _createFolders;
+        private bool _strongImageValidation;
+        private string _aspect;
+        private string _rssURL;
+        private bool _resolutionMaxAvailable;
+        private bool _resolutionMinAvailable;
+        private int _userResWMin;
+        private int _userResHMin;
+        private int _userResWMax;
+        private int _userResHMax;
+        private string _channelName;
+        private string _method;
+        private string _rssType;
+        private string _setStaticWallpaper;
+        #endregion
 
-        public static string rssType { get; set; }
+        #region Public Properties
 
+        #endregion
+
+        #region Public Getters / Setters 
+        public bool resolutionMaxAvailable { get; set; }
+        public bool resolutionMinAvailable { get; set; }
+        public int userResWMin { get; set; }
+        public int userResHMin { get; set; }
+        public int userResWMax { get; set; }
+        public int userResHMax { get; set; }
+
+
+
+        [Option("-F", CommandOptionType.SingleValue, Description = "[source]:\t\tspecify the source from where to download the image\n" +
+                               "\t\t\t[B]ing download from Bing Daily Wallpaper\n" +
+                               "\t\t\t[R]eddit download from a subreddit, use -C ChannelName to specify the subreddit\n" +
+                               "\t\t\t[D]eviantArt download from a topic on DeviantArt.com, use -C ChannelName to specify the topic\n")]
+        public string rssType { get { return _rssType; } set { setRSS(new string[] { "B", "R", "D" }, value); } }
+
+        [Option("-C", CommandOptionType.SingleValue, Description = "channelName:\t\tspecify from which subreddit or deviantart topic to downloade the image from")]
+        public string channelName { get { return _channelName; } set { setChannelName(value); } }
+
+        [Option("-Y", CommandOptionType.NoValue, Description = "\t\t\tif the saving folder do not exists, create it")]
+        public bool createFolders { get { return _createFolders; } set { _createFolders = value; } }
+
+        [Option("-G", CommandOptionType.SingleValue, Description = "filename:\t\tset the specified file as wallpaper instead of downloading from a source")]
+        public string setStaticWallpaper { get { return _setStaticWallpaper; } set { setFileAsWallpaper(value); } }
+
+        [Option("-M", CommandOptionType.SingleValue, Description = "[method]:\t\tspecify the method to use for selecting the image to download\n" +
+                                                                   "\t\t\t[R]andom, download a random image from the channel if more than one present - default\n" +
+                                                                   "\t\t\t[L]ast, download the most recent image from the channel")]
+        public string method { get { return _method; } set { setMethod(new string[] { "R", "L" }, value); } }
+
+        [Option("-saveTo", CommandOptionType.SingleValue, Description = "folder:\t\tspecify where to save the image files")]
+        public string saveFolder { get { return _saveFolder; } set { setSaveFolder(value); } }
+
+        [Option("-backupTo", CommandOptionType.SingleValue, Description = "folder:\t\tspecify a backup location where to save the image files")]
+        public string backupFolder { get { return _backupFolder; } set { setBackupFolder(value); } }
+
+        [Option("-backupFilename", CommandOptionType.SingleValue, Description = "filename:\t\tspecify the filename to use for the image when saved in the backup folder,\n\t\t\tif not specified it will be the same as the image saved in the saveTo Folder")]
+        public string backupFilename { get { return _backupFilename; } set { _backupFilename = value; } }
+
+        [Option("-XMin", CommandOptionType.SingleValue, Description = "resX[,xX]resY\tspecify the minimum resolution at which the image should be picked")]
+        public string resolutionMin { get { return _resolutionMin; } set { setXMin(value); } }
+
+        [Option("-XMax", CommandOptionType.SingleValue, Description = "resX[,xX]resY\tspecify the maximum resolution at which the image should be picked")]
+        public string resolutionMax { get { return _resolutionMax; } set { setXMax(value); } }
+
+        [Option("-SI", CommandOptionType.NoValue, Description = "\t\t\tperform a strong image validation (i.e. check if url has a real image encoding - slow method")]
+        public bool strongImageValidation { get { return _strongImageValidation; } set { _strongImageValidation = value; } }
+
+        [Option("-A", CommandOptionType.SingleValue, Description = "landscape | portrait\tspecify which image aspect to prefer landscape or portrait")]
+        public string aspect { get { return _aspect; } set { setAspect(new string[] { "landscape", "portrait" }, value); } }
+
+        [Option("-S", CommandOptionType.NoValue, Description = "\t\t\tsilent mode, do not output stats/results in console")]
+        public bool silent { get { return _silent; } set { _silent = value; } }
+
+        [Option("-W", CommandOptionType.SingleValue, Description = "\t\t\tset last downloaded image as desktop wallpaper (1)")]
+        public bool setWallpaper { get { return _setWallpaper; } set { _setWallpaper = value; } }
+
+        [Option("-D", CommandOptionType.SingleValue, Description = "#:\t\t\tkeep the size of the saving folder to # files - deleting the oldest")]
+        public int deleteMax { get { return _deleteMax; } set { _deleteMax = Convert.ToInt32(value); } }
+
+        [Option("-region", CommandOptionType.SingleValue, Description = "code:\t\t[Bing only] download images specifics to a region (i.e.: en-US, ja-JP, etc.), if blank uses your internet option language setting (2)")]
+        public string region { get { return _region; } set { _region = value; } }
+        // addParameter("-L", "-L:                       set last downloaded image as lock screen (1)", "");
+        [Option("-R", CommandOptionType.SingleValue, Description = "\t\t\trename the file using different styles\n" +
+                                                                    "attributes:\t\td   the current date and time     c     the image caption\n" +
+                                                                    "\t\t\tsA  a string with alphabetic seq  sN    string with numeric sequence\n" +
+                                                                    "\t\t\tsO  string only - this will overwrite any existing file with the same name")]
+        public string rename { get { return _rename; } set { setRenameStyle(new string [] {"d","c","sA","sN","sO" }, value); } }
+
+        [Option("-renameString", CommandOptionType.SingleValue, Description = "string:\t\tthe string to use as prefix for sequential renaming - requires -R sA or -R sN")]
+        public string renameString { get { return _renameString; } set { _renameString = value; } }
+
+        //addParameter("-help", "-help:                    shows this screen", "showHelp");
+
+
+        #region Private Internal Properties 
         private static string urlFound = "";
         private static List<string> imagesCaptions = new List<string>();
         private static List<string> imagesCandidates = new List<string>();
+
+        // Parameters
+        private static List<string> parameters = new List<string>();
+        private static List<string> parametersHelp = new List<string>();
+        private static List<string> parametersSet = new List<string>();
+        #endregion
+        #region Constants
         // Constants used for setWallPaper
         public const int SPI_SETDESKWALLPAPER = 20;
         public const int SPIF_UPDATEINIFILE = 1;
         public const int SPIF_SENDCHANGE = 2;
 
-
+        // Internal application constants
         public const string BING_BASE_URL = "https://www.bing.com/HPImageArchive.aspx?format=xml&idx=0&n=1";
         public const string BING_REGION_BASE_PARAM = "&mkt=";
         public const string REDDIT_BASE_URL = "https://www.reddit.com/r/%channel%/.rss";
         public const string DEVIANTART_BASE_URL = "https://backend.deviantart.com/rss.xml?q=%channel%";
-
-        public const string version = "1.0.0-beta.3";
+        #endregion
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern int SystemParametersInfo(
           int uAction, int uParam, string lpvParam, int fuWinIni);
-
+        #endregion
         [STAThread]
-        static void Main(string[] args)
+        #region Properties Setters
+        public void initDefaults()
         {
-            rssURL = "";
-            rssType = "";
-           
-            // check if any argument
-            if (args.Length == 0)
+            silent = false;
+            strongImageValidation = false;
+            setWallpaper = false;
+            deleteMax = -1;
+            createFolders = false;
+            aspect = "landscape";
+            method = "R";
+            // Xmin
+            resolutionMin = "0x0";
+            resolutionMinAvailable = false;
+            userResWMin = 0;
+            userResHMin = 0;
+            // Xmax
+            resolutionMax = "0x0";
+            resolutionMaxAvailable = false;
+            userResHMax = 0;
+            userResWMax = 0;
+        }
+
+        public void setRenameStyle(string[] validOptions, string parameterValue)
+        {
+            if (!checkValidOptions(validOptions, parameterValue))
             {
-                // no arguments passed, show help screen
-                showHelp();
+                writeLog("ERROR: You specified a non valid renaming style  (" + parameterValue + "), valid values are: " + string.Join(",", validOptions));
+                Environment.Exit((int)ExitCode.WRONG_PARAMETER);
+            }            
+            _rename = parameterValue;
+        }
+        public void setAspect(string[] validOptions, string parameterValue) 
+        {
+            if (!checkValidOptions(validOptions, parameterValue))
+            {
+                writeLog("ERROR: You specified a non valid aspect ration  (" + parameterValue + "), valid values are: " + string.Join(",", validOptions));
+                Environment.Exit((int)ExitCode.WRONG_PARAMETER);
+            }
+            _aspect = parameterValue;
+        }
+
+        public void setXMin(string parameterValue)
+        {
+            _resolutionMin = parameterValue; 
+            _resolutionMinAvailable = true;
+            int[] userRes = processResolution(_resolutionMin);
+
+            _userResWMin = userRes[0];
+            _userResHMin = userRes[1];
+        }
+        public void setXMax(string parameterValue)
+        {
+            _resolutionMax = parameterValue; 
+            _resolutionMaxAvailable = true;
+            int[] userRes = processResolution(_resolutionMax);
+            _userResWMax = userRes[0];
+            _userResHMax = userRes[1];
+        }
+        public void setBackupFolder(string parameterValue) 
+        {             
+            // check if the backupFolder exists
+            bool exists = Directory.Exists(parameterValue);
+
+            if (!exists)
+            {
+                if (_createFolders)
+                {
+                    // create the folder
+                    Directory.CreateDirectory(parameterValue);
+                    writeLog("Backup folder do not exists, creating... " + parameterValue);
+                }
+                else
+                {
+                    // Exit with error
+                    writeLog("ERROR - The specified backup path (" + parameterValue + ") do not exists!");
+                    Environment.Exit(101);
+                }
+            }
+
+            // set the backupFolder
+            _backupFolder = parameterValue;
+        }
+        public void setSaveFolder(string parameterValue)
+        {
+            // check if the saveFolder exists
+            bool exists = Directory.Exists(parameterValue);
+
+            if (!exists)
+            {
+                if (_createFolders)
+                {
+                    // create the folder
+                    Directory.CreateDirectory(parameterValue);
+                    writeLog("Saving folder do not exists, creating... " + parameterValue);
+                }
+                else
+                {
+                    // Exit with error
+                    writeLog("ERROR - The specified saving path (" + parameterValue + ") do not exists!");
+                    Environment.Exit(101);
+                }
+            }
+
+            // set the saveFolder
+            _saveFolder = parameterValue;
+        }
+        
+
+        public void setMethod(string[] validOptions, string parameterValue)
+        {
+            if (!checkValidOptions(validOptions, parameterValue))
+            {
+                writeLog("ERROR: You specified a non valid method  (" + parameterValue + "), valid values are: " + string.Join(",", validOptions));
+                Environment.Exit((int)ExitCode.WRONG_PARAMETER);
+            }
+
+            if (parameterValue == "R" || parameterValue == "L" || parameterValue == "Random" || parameterValue == "Last")
+            {
+                _method = parameterValue;
             }
             else
             {
-                // process arguments
-                InputArguments arguments = new InputArguments(args);
-                if (arguments.Contains("help"))
-                {
-                    showHelp();
-                }
-                if (arguments.Contains("-S"))
-                {
-                    silent = true;
-                }
-                else
-                {
-                    silent = false;
-                }
-
-                if (arguments.Contains("-L"))
-                {
-                    setLockscreen = true;
-                }
-                else
-                {
-                    setLockscreen = false;
-                }
-
-                if (arguments.Contains("-SI"))
-                {
-                    strongImageValidation = true;
-                }
-                else
-                {
-                    strongImageValidation = false;
-                }
-
-
-                if (arguments.Contains("-W"))
-                {
-                    setWallpaper = true;
-                }
-                else
-                {
-                    setWallpaper = false;
-                }
-
-                if (arguments.Contains("-XMin"))
-                {
-                    resolutionMin = arguments["-XMin"];
-                    resolutionMinAvailable = true;
-                    int[] userRes = processResolution(resolutionMin);
-
-                    userResWMin = userRes[0];
-                    userResHMin = userRes[1];
-                }
-                else
-                {
-                    resolutionMin = "0x0";
-                    resolutionMinAvailable = false;
-                    userResWMin = 0;
-                    userResHMin = 0;
-                }
-                if (arguments.Contains("-XMax"))
-                {
-                    resolutionMax = arguments["-XMax"];
-                    resolutionMaxAvailable = true;
-                    int[] userRes = processResolution(resolutionMax);
-                    userResWMax = userRes[0];
-                    userResHMax = userRes[1];
-                }
-                else
-                {
-                    resolutionMax = "0x0";
-                    resolutionMaxAvailable = false;
-                    userResHMax = 0;
-                    userResWMax = 0;
-                }
-
-                if (arguments.Contains("-D"))
-                {
-                    deleteMax = Convert.ToInt32(arguments["-D"]);
-                }
-                else
-                {
-                    deleteMax = -1;
-                }
-                if (arguments.Contains("-A"))
-                {
-                    if (arguments["-A"] == "landscape")
-                    {
-                        aspect = "landscape";
-                    }
-                    else
-                    {
-                        aspect = "portrait";
-                    }
-
-                } else
-                {
-                    aspect = "landscape";
-                }
-                if (arguments.Contains("-region"))
-                {
-                    region = arguments["-region"];
-                }
-                else
-                {
-                    region = "";
-                }
-
-                if (arguments.Contains("-R"))
-                {
-                    rename = arguments["-R"];
-                }
-                else
-                {
-                    rename = "";
-                }
-
-                if (arguments.Contains("-backupFilename"))
-                {
-                    backupFilename = arguments["-backupFilename"];
-                }
-                else
-                {
-                    backupFilename = "";
-                }
-
-                if (arguments.Contains("-renameString"))
-                {
-                    renameString = arguments["-renameString"];
-                }
-                else
-                {
-                    renameString = "";
-                }
-                // check that if -R sA or -R sN option is selected there is a non empty renameString otherwise return error
-                if (rename == "sA" || rename == "sN")
-                {
-                    if (renameString == "")
-                    {
-                        writeLog("ERROR: You need to specify a rename String with the option -R sA and -R sN");
-                        Environment.Exit(100);
-                    }
-                }
-
-                backupFolder = "";
-                saveFolder = "";
-
-                if (arguments.Contains("-backupTo"))
-                {
-                    // check if the backupFolder exists
-                    bool exists = Directory.Exists(arguments["-backupTo"]);
-
-                    if (!exists)
-                    {
-                        if (arguments.Contains("-Y"))
-                        {
-                            // create the folder
-                            Directory.CreateDirectory(arguments["-backupTo"]);
-                            writeLog("Backup folder do not exists, creating... " + arguments["-backupTo"]);
-                        }
-                        else
-                        {
-                            // Exit with error
-                            writeLog("ERROR - The specified backup path (" + arguments["-backupTo"] + ") do not exists!");
-                            Environment.Exit(101);
-                        }
-                    }
-
-                    // set the backupFolder
-                    backupFolder = arguments["-backupTo"];
-                }
-
-                if (arguments.Contains("-saveTo"))
-                {
-                    // check if the saveFolder exists
-                    bool exists = Directory.Exists(arguments["-saveTo"]);
-
-                    if (!exists)
-                    {
-                        if (arguments.Contains("-Y"))
-                        {
-                            // create the folder
-                            Directory.CreateDirectory(arguments["-saveTo"]);
-                            writeLog("Saving folder do not exists, creating... " + arguments["-saveTo"]);
-                        }
-                        else
-                        {
-                            // Exit with error
-                            writeLog("ERROR - The specified saving path (" + arguments["-saveTo"] + ") do not exists!");
-                            Environment.Exit(101);
-                        }
-                    }
-
-                    // set the saveFolder
-                    saveFolder = arguments["-saveTo"];
-                }
-                else if (!arguments.Contains("-L") && !arguments.Contains("-W") && !arguments.Contains("-G"))
-                {
-                    writeLog("ERROR - You must specify a destination folder");
-                    Environment.Exit(102);
-                }
-
-                getLocalFile = "";
-
-
-                if (arguments.Contains("-M"))
-                {
-                    if (arguments["-M"] == "R" || arguments["-M"] == "L" || arguments["-M"] == "Random" || arguments["-M"] == "Last")
-                    {
-                        method = arguments["-M"];
-                    } else
-                    {
-                        method = "R";
-                    }
-                    
-                }
-                else
-                {
-                    method = "R";
-                }
-
-                if (arguments.Contains("-G"))
-                {
-                    bool exists = File.Exists(arguments["-G"]);                    
-                    bool isImage = new[] { ".png", ".gif", ".jpg", ".tiff", ".bmp", ".jpeg", ".dib", ".jfif",".jpe",".tif",".wdp" }.Any(c => arguments["-G"].Contains(c));
-                                        
-
-                    if (!isImage)
-                    {
-                        // Exit with error
-                        writeLog("ERROR - The specified file (" + arguments["-G"] + ") is not an image!");
-                        Environment.Exit(102);
-                    }
-
-                    if (!exists)
-                    {
-                        // Exit with error
-                        writeLog("ERROR - The specified file (" + arguments["-G"] + ") doesn't exist!");
-                        Environment.Exit(102);
-                    }
-
-                    // set the file
-                    getLocalFile = arguments["-G"];
-                    writeLog(" setting: " + getLocalFile + " as wallpaper");
-                    setWallPaper(getLocalFile);
-                    Environment.Exit(0);
-                }
-
-                if (arguments.Contains("-F"))
-                {
-                   
-                    if (arguments["-F"] != null)
-                    {
-                        switch (arguments["-F"].ToLower()) {
-                            case "bing":
-                            case "b":
-                                rssURL = BING_BASE_URL;
-                                rssType = "BING";
-                                // check if a region is specified and adjust the bingURL accordingly
-                                // valid region are http://msdn.microsoft.com/en-us/library/ee825488%28v=cs.20%29.aspx
-                                if (region != "")
-                                {
-                                    if (IsValidCultureInfoName(region))
-                                    {
-                                        rssURL += BING_REGION_BASE_PARAM + region;
-                                    }
-                                    else
-                                    {
-                                        // The provided region - culture is not valid - exit with error
-                                        writeLog("ERROR: The region provided is not valid!");
-                                        Environment.Exit(104);
-                                    }
-                                }
-                                else
-                                {
-                                    rssURL += BING_REGION_BASE_PARAM + "en-WW";
-                                }
-                                break;
-                            case "reddit":
-                            case "r":
-                                if (isChannelAvailable(arguments))
-                                {
-                                    rssURL = REDDIT_BASE_URL;
-                                    rssURL = rssURL.Replace("%channel%", arguments["-C"]);
-                                }
-                                rssType = "REDDIT";
-                                break;
-                            case "deviantart":
-                            case "d":
-                                if (isChannelAvailable(arguments)) {
-                                    rssURL = DEVIANTART_BASE_URL;
-                                    rssURL = rssURL.Replace("%channel%", arguments["-C"]);
-                                }
-                                rssType = "DEVIANTART";
-                                break;
-                            default:
-                                rssType = "";
-                                rssURL = "";
-                                break;
-                        }
-                    }
-                    processRSS();
-                }
-
-            }
-
-            if (rssURL == "")
-            {
-                // Exit with error
-                writeLog("ERROR - Source is missing, there is nothing else to do");
-                Environment.Exit(101);
+                _method = "R";
             }
         }
 
-        static bool isChannelAvailable(InputArguments arg)
-        {
-            if (!arg.Contains("-C"))
+        public void setFileAsWallpaper(string parameterValue)
+        {            
+            bool exists = File.Exists(parameterValue);
+            bool isImage = new[] { ".png", ".gif", ".jpg", ".tiff", ".bmp", ".jpeg", ".dib", ".jfif", ".jpe", ".tif", ".wdp" }.Any(c => parameterValue.Contains(c));
+
+
+            if (!isImage)
             {
                 // Exit with error
-                writeLog("ERROR - You must specify a channel (option -C channelname) when using Reddit or DeviantArt as source");
+                writeLog("ERROR - The specified file (" + parameterValue + ") is not an image!");
                 Environment.Exit(102);
-                return false;
-            } else if (arg["-C"]==null || arg["-C"]=="")
+            }
+
+            if (!exists)
+            {
+                // Exit with error
+                writeLog("ERROR - The specified file (" + parameterValue + ") doesn't exist!");
+                Environment.Exit(102);
+            }
+
+            // set the file
+            _setStaticWallpaper = parameterValue;
+            writeLog(" setting: " + _setStaticWallpaper + " as wallpaper");
+            setWallPaper(_setStaticWallpaper);
+            Environment.Exit(0);
+        }
+        public void setChannelName(string parameterValue) {
+            bool isChannel = false;
+
+            if (parameterValue.Length > 0)
+            {
+                var channels = parameterValue;
+                if (channels != "")
+                {
+                    _channelName = channels;
+                    _rssURL = _rssURL.Replace("%channel%", channels);
+                    isChannel = true;
+                }
+
+            }
+
+            if (!isChannel) 
+            {
+                // Exit with error
+                writeLog("ERROR - You must specify a channel (option -C channelname) when using Reddit or DeviantArt as source and it cannot be blank");
+                Environment.Exit(102);
+            }
+        }
+        private void setRSS(string[] validOptions, string parameterValue)
+        {
+            if (!checkValidOptions(validOptions, parameterValue))
+            {
+                writeLog("ERROR: You specified a non valid RSS type  (" + parameterValue + "), valid values are: " + string.Join(",", validOptions));
+                Environment.Exit((int)ExitCode.WRONG_PARAMETER);
+            }
+
+            string rssTypeRequested = parameterValue.ToLower();
+
+            if (parameterValue.Length > 0)
+            {
+                switch (rssTypeRequested)
+                {
+                    case "bing":
+                    case "b":
+                        _rssURL = BING_BASE_URL;
+                        _rssType = "BING";
+                        // check if a region is specified and adjust the bingURL accordingly
+                        // valid region are http://msdn.microsoft.com/en-us/library/ee825488%28v=cs.20%29.aspx
+                        if (region != "" && region != null)
+                        {
+                            if (IsValidCultureInfoName(region))
+                            {
+                                _rssURL += BING_REGION_BASE_PARAM + region;
+                            }
+                            else
+                            {
+                                // The provided region - culture is not valid - exit with error
+                                writeLog("ERROR: The region provided is not valid!");
+                                Environment.Exit(104);
+                            }
+                        }
+                        else
+                        {
+                            _rssURL += BING_REGION_BASE_PARAM + "en-WW";
+                        }
+                        break;
+                    case "reddit":
+                    case "r":
+                        _rssURL = REDDIT_BASE_URL;
+                        _rssType = "REDDIT";
+                        break;
+                    case "deviantart":
+                    case "d":
+                        _rssURL = DEVIANTART_BASE_URL;
+                        _rssType = "DEVIANTART";
+                        break;
+                    default:
+                        _rssType = "";
+                        _rssURL = "";
+                        break;
+                }
+            }
+            else
+            {
+                // Exit with error
+                writeLog("ERROR - You must specify one of the following types: [B] for Bing, [R] for Reddit, [D] for DeviantArt");
+                Environment.Exit((int)ExitCode.WRONG_PARAMETER);
+            }
+
+        }
+        #endregion
+
+        #region Private Internal methods
+        private bool checkValidOptions(string[] validOptions, string parameterValue)
+        {
+            bool isValid = false;
+            foreach (string option in validOptions)
+            {
+                if (option == parameterValue)
+                {
+                    isValid = true;
+                    break;
+                }
+            }
+
+            return isValid;
+        }
+        #endregion
+        #region Public Methods
+        #endregion
+        #region Main        
+        
+        public static void Main(string[] args)
+            => CommandLineApplication.Execute<Program>(args);
+
+        
+        
+        private void OnExecute(CommandLineApplication app)
+        {
+            if (app.GetOptions().All(o=>!o.HasValue()))
+            {
+                app.ShowHelp();
+                Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
+            }
+            writeLog(appIdentity.FullVersionToString, true);
+            writeLog("----Start Processing----", true);
+            initDefaults();
+            processRSS();
+
+            if (_rssURL == null)
+            {
+                // Exit with error
+                writeLog("ERROR - Source is missing, there is nothing else to do");
+                Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
+            }
+
+        }
+        #endregion
+        public bool isChannelAvailable(string channel)
+        {
+            if (channel == null || channel == "")
             {
                 writeLog("ERROR - You must specify a channel (option -C channelname) when using Reddit or DeviantArt as source");
-                Environment.Exit(102);
+                Environment.Exit((int)ExitCode.WRONG_PARAMETER);
                 return false;
             } else
             {
                 return true;
             }
-        }
-
-        static void showHelp()
-        {
-            Console.WriteLine("Wallpaper Buddy - " + version);
-            Console.WriteLine("\nDownload random wallpapers for desktop and lockscreen");
-            Console.WriteLine("\nUsage: WallpaperBuddy [options] [-help]\n");
-
-            Console.WriteLine("-F [source]:              specify the source from where to download the image");
-            Console.WriteLine("sources:                  [B]ing download from Bing Daily Wallpaper");
-            Console.WriteLine("                          [R]eddit download from a subreddit, use -C ChannelName to specify the subreddit");
-            Console.WriteLine("                          [D]eviantArt download from a topic on DeviantArt.com, use -C ChannelName to specify the topic");
-            Console.WriteLine("-C channelName:           specify from which subreddit or deviantart topic to downloade the image from");
-            Console.WriteLine("-G filename:              set the specified file as wallpaper instead of downloading from a source");
-            Console.WriteLine("-M [method]:              specify the method to use for selecting the image to download");
-            Console.WriteLine("                          [R]andom, download a random image from the channel if more than one present - default");
-            Console.WriteLine("                          [L]ast, download the most recent image from the channel");
-            Console.WriteLine("-saveTo folder:           specify where to save the image files");
-            Console.WriteLine("-backupTo folder:         specify a backup location where to save the image files");
-            Console.WriteLine("-backupFilename filename: specify the filename to use for the image when saved in the backup folder, if not specified it will be the same as the image saved in the saveTo Folder");
-
-            Console.WriteLine("-XMin resX[,xX]resY       specify the minimum resolution at which the image should be picked");
-            Console.WriteLine("-XMax resX[,xX]resY       specify the maximum resolution at which the image should be picked");
-            Console.WriteLine("-SI                       specify to perform a strong image validation (i.e. check if url has a real image encoding - slow method)");
-            Console.WriteLine("-A landscape | portrait   specify which image aspect to prefer landscape or portrait");
-
-            Console.WriteLine("-Y:                       if the saving folder do not exists, create it");
-            Console.WriteLine("-S:                       silent mode, do not output stats/results in console");
-            Console.WriteLine("-L:                       set last downloaded image as lock screen (1)");
-            Console.WriteLine("-W:                       set last downloaded image as desktop wallpaper (1)");
-            Console.WriteLine("-D #:                     keep the size of the saving folder to # files - deleting the oldest");
-
-            Console.WriteLine("-region code:             [Bing only] download images specifics to a region (i.e.: en-US, ja-JP, etc.), if blank uses your internet option language setting (2)");
-            Console.WriteLine("-R:                       rename the file using different styles");
-            Console.WriteLine("attributes:               d   the current date and time     c     the image caption");
-            Console.WriteLine("                          sA  a string with alphabetic seq  sN    string with numeric sequence");
-            Console.WriteLine("                          sO  string only - this will overwrite any existing file with the same name");
-            Console.WriteLine("-renameString string:     the string to use as prefix for sequential renaming - requires -R sA or -R sN");
-
-            Console.WriteLine("-help:                    shows this screen");
-            Console.WriteLine("");
-            Console.WriteLine(@"(1):                      This feature it's only available for Windows 10 systems,
-                          the image will be saved in the system's temp folder if the saveTo option is not specified
-                          note that wallpaper image shuffle and lockscreen slide show will be disabled using this option");
-            Console.WriteLine(@"(2):                      For a list of valid region/culture please refer to http://msdn.microsoft.com/en-us/library/ee825488%28v=cs.20%29.aspx");
-
         }
 
        
@@ -540,17 +559,24 @@ namespace WallpaperBuddy
         }
 
         // Output a log message to the stdout if silent option is off
-        static void writeLog(string message)
+        public void writeLog(string message, bool suppressTime = false)
         {
             if (!silent)
             {
                 DateTime dt = DateTime.Now;
-                Console.WriteLine(dt.ToString("dd-MMM-yyyy HH:mm:ss: ") + message);
+                if (!suppressTime)
+                {
+                    Console.WriteLine(dt.ToString("dd-MMM-yyyy HH:mm:ss: ") + message);
+                } else
+                {
+                    Console.WriteLine(message);
+                }
+                
             }
         }
 
         // Process the image caption if required
-        static string processCaption(HtmlAgilityPack.HtmlNode document)
+        public string processCaption(HtmlAgilityPack.HtmlNode document)
         {
             var anchorNodes = document.SelectNodes("//a[contains(@id,'sh_cp')]");
             var imgCaption = "";
@@ -579,7 +605,7 @@ namespace WallpaperBuddy
         }
 
         // Clean the caption string from commas, dots, parenthesis, etc.
-        static string cleanCaption(string caption)
+        public string cleanCaption(string caption)
         {
             var newCaption = "";
             string[] stringSeparators = new string[] { "(©" };
@@ -591,7 +617,7 @@ namespace WallpaperBuddy
         }
 
         // Process the -D option to keep the destination folder within a max number of files
-        static void processDeleteMaxOption()
+        public void processDeleteMaxOption()
         {
             if (File.Exists(saveFolder + Path.DirectorySeparatorChar + "Thumbs.db"))
             {
@@ -616,7 +642,7 @@ namespace WallpaperBuddy
             }
         }
 
-        private static string MakeValidFileName(string name)
+        private string MakeValidFileName(string name)
         {
             string invalidChars = System.Text.RegularExpressions.Regex.Escape(new string(System.IO.Path.GetInvalidFileNameChars()));
             string invalidRegStr = string.Format(@"([{0}]*\.+$)|([{0}]+)", invalidChars);
@@ -625,7 +651,7 @@ namespace WallpaperBuddy
         }
 
         // Process the option -R to rename the image file
-        static string processRenameFile(string imgCaption, string fName)
+        private string processRenameFile(string imgCaption, string fName)
         {
             var destFileName = "";
 
@@ -642,21 +668,34 @@ namespace WallpaperBuddy
             }
             else if(rename == "sO")
             {
+                // check if Rename String is empty
+                if (renameString == "" || renameString == null)
+                {
+                    writeLog("ERROR: You need to specify a renameString when using the -R " + rename + " option");
+                    Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
+                } 
                 // rename with string, only preserve the extension
                 destFileName = renameString + Path.GetExtension(fName); 
             }
             else if (rename == "sA" || rename == "sN")
-            {                
-                var sequence = "";
+            {
+                // check if Rename String is empty
+                if (renameString == "" || renameString == null)
+                {
+                    writeLog("ERROR: You need to specify a renameString when using the -R "+ rename +" option");
+                    Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
+                }
+
+                var sequence = "";                
                 var fi = Directory.EnumerateFiles(saveFolder).Max(filename => filename);
                 if (fi == null)
                 {
                     // directory is empty
-                    sequence = "0";
+                    sequence = "0";                    
                 }
                 else
                 {
-                    var lastfile = Path.GetFileNameWithoutExtension(fi.ToString());
+                    var lastfile = Path.GetFileNameWithoutExtension(fi.ToString());                    
                     if (lastfile.Contains("_"))
                     {
                         sequence = lastfile.Split('_')[1]; // can be A,B,C or 1,2,3 or a two-three-etc digit/letter                    
@@ -664,22 +703,22 @@ namespace WallpaperBuddy
                     else
                     {
                         sequence = "0";
-                    }
+                    }                 
                     
                 }
                 //lastenum = (int)Convert.ToChar(sequence);
                 var isNumeric = int.TryParse(sequence, out int lastenum);
-                var fCount = -1;
+                var fCount = -1;                
                 if (isNumeric && rename == "sN")
                 {
                     // numeric sequence
                     lastenum++;
-                    destFileName = renameString + "_" + Convert.ToString(lastenum);
+                    destFileName = renameString + "_" + Convert.ToString(lastenum);                    
                 }
                 else if(!isNumeric || rename == "sA")
                 {
                     // alphabetic sequence                                
-                    fCount = Directory.GetFiles(saveFolder, "*.*", SearchOption.TopDirectoryOnly).Length + 1;
+                    fCount = Directory.GetFiles(saveFolder, "*.*", SearchOption.TopDirectoryOnly).Length + 1;                    
                     if (fCount > 0)
                     {
                         destFileName = renameString + "_" + ColumnIndexToColumnLetter(fCount);
@@ -689,7 +728,7 @@ namespace WallpaperBuddy
                         destFileName = renameString + "_Err";
                     }
 
-                }
+                }                
                 destFileName += Path.GetExtension(fName);
             }
             else
@@ -700,8 +739,13 @@ namespace WallpaperBuddy
             return destFileName;
         }
 
-        static bool checkInternetConnection(string URL)
+        public bool checkInternetConnection(string URL)
         {
+            if (URL == "" || URL == null)
+            {
+                writeLog("ERROR - Important parameters missing");
+                Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
+            }
             bool exceptionFlag = true;
 
             // variables used to check internet connection
@@ -738,7 +782,7 @@ namespace WallpaperBuddy
          * ref: http://www.lshift.net/blog/2013/03/25/programmatically-updating-local-policy-in-windows/
          * author: Martin Eden
          */
-        static void setLockScreenGPO(string filename)
+        public void setLockScreenGPO(string filename)
         {
             var gpo = new LocalPolicy.ComputerGroupPolicyObject();
             const string keyPath = @"Software\Microsoft\Windows\CurrentVersion\Group Policy Objects\{1E2AC4AE-C9D5-4E5B-B2B9-F4C1FF9040F4}Machine\Software\Policies\Microsoft\Windows\Personalization";
@@ -755,7 +799,7 @@ namespace WallpaperBuddy
             gpo.Save();
         }
 
-        static void setLockScreenRegistry(string filename)
+        public void setLockScreenRegistry(string filename)
         {
 
             RegistryKey myKey;
@@ -835,14 +879,14 @@ namespace WallpaperBuddy
             }
         }
         */
-        static void setWallPaper(string filename)
+        public void setWallPaper(string filename)
         {
             SystemParametersInfo(
               SPI_SETDESKWALLPAPER, 0, filename,
               SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
         }
 
-        static bool weakImageValidation(string url)
+        public bool weakImageValidation(string url)
         {
             string imageExtension = @"(http(s?):)([/|.|\w|\s|-])*\.(?:jp(e?)g|gif|png|bmp|tiff)";
             Regex rgx_Ext = new Regex(imageExtension);
@@ -857,7 +901,7 @@ namespace WallpaperBuddy
             }
         }
 
-        static bool validateImage(string url)
+        public bool validateImage(string url)
         {
             bool weakImageValid = weakImageValidation(url);
             if (!strongImageValidation)
@@ -892,7 +936,7 @@ namespace WallpaperBuddy
             }
         }
 
-        static bool extractImage(string URL)
+        public bool extractImage(string URL)
         {
             int[] imageRes = processResolution(URL);
 
@@ -948,7 +992,7 @@ namespace WallpaperBuddy
             return false;
         }
 
-        static void processBingXML(XmlReader reader)
+        public void processBingXML(XmlReader reader)
         {
             string caption = "";
             HtmlDocument doc = new HtmlDocument();
@@ -975,11 +1019,11 @@ namespace WallpaperBuddy
             
         }
 
-        static void processDeviantXML(XmlReader reader)
+        public void processDeviantXML(XmlReader reader)
         {
 
         }
-        static void processRedditXML(XmlReader reader)
+        public void processRedditXML(XmlReader reader)
         {
             HtmlDocument doc = new HtmlDocument();
 
@@ -1012,7 +1056,7 @@ namespace WallpaperBuddy
 
         /* Breaks down the min and max resolution constraints defined in the resolution paramenter. This could be the user defined resolution from the command line or coming from the image title
            Return an array of integer representing Width, Height*/
-        static int[] processResolution(string resolution)
+        public int[] processResolution(string resolution)
         {
             string regexpResolution = @"(([\d ]{2,5})[x|*|X|×|,]([\d ]{2,5}))";
             int[] processedRes = new int[2];
@@ -1030,8 +1074,8 @@ namespace WallpaperBuddy
             processedRes[1] = userResH;
             return processedRes;
         }
-         
-        static string extractFileNameFromURL(string URL)
+
+        public string extractFileNameFromURL(string URL)
         {
             Uri urlFoundUri = new Uri(URL);
             string fileName = "";
@@ -1050,22 +1094,43 @@ namespace WallpaperBuddy
             return fileName;
         }
 
-        static int processRSS()
+        private int processRSS()
         {
             string URL = "";
 
             // flag for exceptions
             bool exceptionFlag;
 
-            if (rssURL != "")
+            if (_rssURL != null)
             {
                 
-                URL = rssURL;
-            } else
+                URL = _rssURL;
+            } 
+            else
             {
                 // Exit with error
                 writeLog("ERROR - Source has not been specified, there is nothing else to do");
-                Environment.Exit(101);
+                Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
+            }
+
+            if (rssType == "REDDIT" || rssType == "DEVIANTART")
+            {
+                if (channelName == "" || channelName == null)
+                {
+                    // Exit with error
+                    writeLog("ERROR - You must specify a channel (option -C channelname) when using Reddit or DeviantArt as source and it cannot be blank");
+                    Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
+
+                }
+            }
+
+            if ( rename == "sA" || rename == "sO" || rename == "sN")
+            {
+                if (renameString == "" || renameString == null)
+                {
+                    writeLog("ERROR: You need to specify a renameString when using the -R " + rename + " option");
+                    Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
+                }
             }
 
             // check if source is up - might be down or there may be internet connection issues
@@ -1130,22 +1195,27 @@ namespace WallpaperBuddy
                     {
                         destPath = Path.GetTempPath();
                     } else */
-                    if (setWallpaper && saveFolder == "")
+                    if (setWallpaper && saveFolder == null)
                     {
                         destPath = Path.GetTempPath();
                     }
-                    else if (saveFolder != "")
+                    else if (saveFolder != null)
                     {
                         destPath = saveFolder;
                     }
+                    else
+                    {
+                        destPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+                    }
+
                     ServicePointManager.Expect100Continue = true;
                     ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
                     Client.DownloadFile(imagesCandidates[idx], destPath + Path.DirectorySeparatorChar + destFileName);
                     writeLog("Image saved at: " + destPath + Path.DirectorySeparatorChar + destFileName);
                     // copy the file to the backup folder if defined
-                    if (backupFolder!="")
+                    if (backupFolder!=null)
                     {
-                        if (backupFilename!="")
+                        if (backupFilename!=null)
                         {
                             string ext = Path.GetExtension(destFileName);
                             destBackupFileName = backupFilename + ext;
@@ -1177,7 +1247,7 @@ namespace WallpaperBuddy
                 catch (WebException webEx)
                 {
                     writeLog("ERROR - " + webEx.ToString());
-                    Environment.Exit(107);
+                    Environment.Exit((int)ExitCode.EXCEPTION_ERROR);
                 }
 
 
