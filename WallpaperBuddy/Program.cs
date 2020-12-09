@@ -1032,7 +1032,7 @@ namespace WallpaperBuddy
                     break;
                 case "title":
                     String title = reader.ReadString();
-                    if (extractImage(title))
+                    if (extractImage(urlFound))
                     {
                         imagesCaptions.Add(title);
                     }
