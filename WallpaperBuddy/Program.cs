@@ -166,7 +166,7 @@ namespace WallpaperBuddy
         public string resolutionMax { get { return _resolutionMax; } set { setXMax(value); } }
 
         [Option("-SI", CommandOptionType.NoValue, Description = "\t\t\tperform a strong image validation (i.e. check if url has a real image encoding - slow method")]
-        public bool strongImageValidation { get { return _strongImageValidation; } set { _strongImageValidation = value; } }
+        public bool strongImageValidation { get { return _strongImageValidation; } set { _strongImageValidation = true; } }
 
         [Option("-A", CommandOptionType.SingleValue, Description = "landscape | portrait\tspecify which image aspect to prefer landscape or portrait")]
         public string aspect { get { return _aspect; } set { setAspect(new string[] { "landscape", "portrait" }, value); } }
@@ -925,10 +925,29 @@ namespace WallpaperBuddy
 
         public bool extractImage(string URL)
         {
-            int[] imageRes = processResolution(URL);
+            // check if URL is valid
+            if (URL == "" || URL == null)
+            {
+                return false;
+            }
+            if (!Uri.IsWellFormedUriString(URL, UriKind.Absolute))
+            {
+                return false;
+            }
 
-            int imageResW = imageRes[0];
-            int imageResH = imageRes[1];
+            int imageResW = 0;
+            int imageResH = 0;
+            if (!strongImageValidation)
+            {
+                int[] imageRes = processResolution(URL);
+
+                imageResW = imageRes[0];
+                imageResH = imageRes[1];
+            } else
+            {
+               var imageSize = ImageUtilities.GetWebDimensions(new System.Uri(URL));
+               writeLog("Image Size: " + imageSize);
+            }
 
             if (!resolutionMaxAvailable)
             {
