@@ -923,7 +923,7 @@ namespace WallpaperBuddy
             }
         }
 
-        public bool extractImage(string URL)
+        public bool extractImage(string URL, string title)
         {
             // check if URL is valid
             if (URL == "" || URL == null)
@@ -934,19 +934,24 @@ namespace WallpaperBuddy
             {
                 return false;
             }
+            if(!weakImageValidation(URL))
+            {
+                return false;
+            }
 
             int imageResW = 0;
             int imageResH = 0;
             if (!strongImageValidation)
             {
-                int[] imageRes = processResolution(URL);
+                // tries to get the image resolution from the title
+                int[] imageRes = processResolution(title);
 
                 imageResW = imageRes[0];
                 imageResH = imageRes[1];
             } else
             {
-               var imageSize = ImageUtilities.GetWebDimensions(new System.Uri(URL));
-               writeLog("Image Size: " + imageSize);
+                // tries to get the image resolution from the remote file directly                
+                var imageSize = ImageUtilities.GetWebImageSize(URL);               
             }
 
             if (!resolutionMaxAvailable)
@@ -1015,7 +1020,7 @@ namespace WallpaperBuddy
             // Check image size matches settings
             if (urlFound != "" && !imagesCandidates.Contains(urlFound))
             {
-                extractImage(urlFound);
+                extractImage(urlFound, caption);
             }
 
             if (caption != "" && !imagesCaptions.Contains(caption))
@@ -1051,7 +1056,7 @@ namespace WallpaperBuddy
                     break;
                 case "title":
                     String title = reader.ReadString();
-                    if (extractImage(title))
+                    if (extractImage(urlFound, title))
                     {
                         imagesCaptions.Add(title);
                     }
