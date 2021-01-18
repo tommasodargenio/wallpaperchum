@@ -56,6 +56,7 @@ using System.Globalization;
 using Microsoft.Win32;
 using System.Runtime.InteropServices;
 using System.Web;
+using System.Drawing;
 
 namespace WallpaperBuddy
 {
@@ -166,7 +167,7 @@ namespace WallpaperBuddy
         public string resolutionMax { get { return _resolutionMax; } set { setXMax(value); } }
 
         [Option("-SI", CommandOptionType.NoValue, Description = "\t\t\tperform a strong image validation (i.e. check if url has a real image encoding - slow method")]
-        public bool strongImageValidation { get { return _strongImageValidation; } set { _strongImageValidation = value; } }
+        public bool strongImageValidation { get { return _strongImageValidation; } set { _strongImageValidation = true; } }
 
         [Option("-A", CommandOptionType.SingleValue, Description = "landscape | portrait\tspecify which image aspect to prefer landscape or portrait")]
         public string aspect { get { return _aspect; } set { setAspect(new string[] { "landscape", "portrait" }, value); } }
@@ -226,23 +227,13 @@ namespace WallpaperBuddy
         #region Properties Setters
         public void initDefaults()
         {
-            silent = false;
-            strongImageValidation = false;
-            setWallpaper = false;
-            deleteMax = -1;
-            createFolders = false;
-            aspect = "landscape";
-            method = "R";
+            if (deleteMax == 0) { deleteMax = -1; }
+            if (aspect == null) { aspect = "landscape"; }
+            if (method == null) { method = "R"; }
             // Xmin
-            resolutionMin = "0x0";
-            resolutionMinAvailable = false;
-            userResWMin = 0;
-            userResHMin = 0;
+            if (resolutionMin == null) { resolutionMin = "0x0"; }
             // Xmax
-            resolutionMax = "0x0";
-            resolutionMaxAvailable = false;
-            userResHMax = 0;
-            userResWMax = 0;
+            if (resolutionMax == null) { resolutionMax = "0x0"; }
         }
 
         public void setRenameStyle(string[] validOptions, string parameterValue)
@@ -258,7 +249,7 @@ namespace WallpaperBuddy
         {
             if (!checkValidOptions(validOptions, parameterValue))
             {
-                writeLog("ERROR: You specified a non valid aspect ration  (" + parameterValue + "), valid values are: " + string.Join(",", validOptions));
+                writeLog("ERROR: You specified a non valid aspect ratio  (" + parameterValue + "), valid values are: " + string.Join(",", validOptions));
                 Environment.Exit((int)ExitCode.WRONG_PARAMETER);
             }
             _aspect = parameterValue;
@@ -923,19 +914,55 @@ namespace WallpaperBuddy
             }
         }
 
-        public bool extractImage(string URL)
+        public bool extractImage(string URL, string title)
         {
-            int[] imageRes = processResolution(URL);
+            // check if URL is valid
+            if (URL == "" || URL == null)
+            {
+                return false;
+            }
+            if (!Uri.IsWellFormedUriString(URL, UriKind.Absolute))
+            {
+                return false;
+            }
+            if(!weakImageValidation(URL))
+            {
+                return false;
+            }
 
-            int imageResW = imageRes[0];
-            int imageResH = imageRes[1];
+            int imageResW = 0;
+            int imageResH = 0;
+            if (!strongImageValidation)
+            {
+                // tries to get the image resolution from the title
+                int[] imageRes = processResolution(title);
+
+                imageResW = imageRes[0];
+                imageResH = imageRes[1];
+            } else
+            {
+                // tries to get the image resolution from the remote file directly    
+                var imageSize = new Size(0, 0);
+                // attempt #1 - get image size via image file headers
+                var imageSizeAlt = ImageUtilities.GetWebImageSize_Fast(new Uri(URL));
+                imageSize = imageSizeAlt.GetAwaiter().GetResult();
+                
+                if (imageSize.IsEmpty)
+                {
+                    // attempt #2 - get image size downloading the whole file, this will be much slower
+                    imageSize = ImageUtilities.GetWebImageSize_Slow(URL);
+                }
+
+                imageResW = imageSize.Width;
+                imageResH = imageSize.Height;
+            }
 
             if (!resolutionMaxAvailable)
             {
                 userResHMax = imageResH;
                 userResWMax = imageResW;
             }
-
+            
             if (imageResW > 0 && imageResH > 0)
             {
                 if (urlFound != "")
@@ -945,7 +972,7 @@ namespace WallpaperBuddy
                         if (aspect == "landscape")
                         {
                             if (imageResW > imageResH)
-                            {
+                            {            
                                 imagesCandidates.Add(urlFound);
                                 return true;
                             }
@@ -953,13 +980,13 @@ namespace WallpaperBuddy
                         else if (aspect == "portrait")
                         {
                             if (imageResH > imageResW)
-                            {
+                            {                             
                                 imagesCandidates.Add(urlFound);
                                 return true;
                             }
                         }
                         else
-                        {
+                        {                            
                             imagesCandidates.Add(urlFound);
                             return true;
                         }
@@ -996,7 +1023,7 @@ namespace WallpaperBuddy
             // Check image size matches settings
             if (urlFound != "" && !imagesCandidates.Contains(urlFound))
             {
-                extractImage(urlFound);
+                extractImage(urlFound, caption);
             }
 
             if (caption != "" && !imagesCaptions.Contains(caption))
@@ -1032,7 +1059,7 @@ namespace WallpaperBuddy
                     break;
                 case "title":
                     String title = reader.ReadString();
-                    if (extractImage(urlFound))
+                    if (extractImage(urlFound, title))
                     {
                         imagesCaptions.Add(title);
                     }
