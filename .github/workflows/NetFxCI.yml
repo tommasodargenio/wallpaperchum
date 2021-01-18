@@ -17,6 +17,7 @@ jobs:
   build:
     env:
       PUBLISH_PATH:  '${{ github.workspace }}\publish'
+      ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
     # The type of runner that the job will run on
     runs-on: windows-latest
@@ -32,7 +33,7 @@ jobs:
     - name: Install dependencies
       run: dotnet restore
     - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1.0.2
+      uses: NuGet/setup-nuget@v1.0.5
     - name: Add msbuild to PATH 
       uses: microsoft/setup-msbuild@v1.0.1      
     - name: Restore NuGet packages
