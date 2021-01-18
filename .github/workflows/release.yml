@@ -2,6 +2,7 @@ name: Release
 env:
   PUBLISH_PATH_WIN: '${{ github.workspace }}\publish'
   PUBLISH_PATH_LIN: '${{ github.workspace }}/publish'
+  ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 on:
   release:
     types: [created]
