@@ -19,7 +19,7 @@ jobs:
     - name: Install dependencies
       run: dotnet restore
     - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1.0.2           
+      uses: NuGet/setup-nuget@v1.0.5           
     - name: Add msbuild to PATH 
       uses: microsoft/setup-msbuild@v1.0.1      
     - name: Restore NuGet packages
