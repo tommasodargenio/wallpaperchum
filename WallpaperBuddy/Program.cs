@@ -227,23 +227,13 @@ namespace WallpaperBuddy
         #region Properties Setters
         public void initDefaults()
         {
-            silent = false;
-            strongImageValidation = false;
-            setWallpaper = false;
-            deleteMax = -1;
-            createFolders = false;
+            if (deleteMax == 0) { deleteMax = -1; }
             if (aspect == null) { aspect = "landscape"; }
             if (method == null) { method = "R"; }
             // Xmin
             if (resolutionMin == null) { resolutionMin = "0x0"; }
-            resolutionMinAvailable = false;
-            userResWMin = 0;
-            userResHMin = 0;
             // Xmax
             if (resolutionMax == null) { resolutionMax = "0x0"; }
-            resolutionMaxAvailable = false;
-            userResHMax = 0;
-            userResWMax = 0;
         }
 
         public void setRenameStyle(string[] validOptions, string parameterValue)
@@ -972,7 +962,7 @@ namespace WallpaperBuddy
                 userResHMax = imageResH;
                 userResWMax = imageResW;
             }
-            writeLog("Checking for image resolution max ("+userResWMax+"x"+userResHMax+") and orientation ("+aspect+")");
+            
             if (imageResW > 0 && imageResH > 0)
             {
                 if (urlFound != "")
@@ -982,8 +972,7 @@ namespace WallpaperBuddy
                         if (aspect == "landscape")
                         {
                             if (imageResW > imageResH)
-                            {
-                                writeLog("Image is landscape with resolution " + imageResW + "x" +imageResH);
+                            {            
                                 imagesCandidates.Add(urlFound);
                                 return true;
                             }
@@ -991,15 +980,13 @@ namespace WallpaperBuddy
                         else if (aspect == "portrait")
                         {
                             if (imageResH > imageResW)
-                            {
-                                writeLog("Image is portrait with resolution " + imageResW + "x" + imageResH);
+                            {                             
                                 imagesCandidates.Add(urlFound);
                                 return true;
                             }
                         }
                         else
-                        {
-                            writeLog("Image is any orientation with resolution " + imageResW + "x" + imageResH);
+                        {                            
                             imagesCandidates.Add(urlFound);
                             return true;
                         }
