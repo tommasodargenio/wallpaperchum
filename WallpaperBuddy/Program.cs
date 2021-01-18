@@ -56,6 +56,7 @@ using System.Globalization;
 using Microsoft.Win32;
 using System.Runtime.InteropServices;
 using System.Web;
+using System.Drawing;
 
 namespace WallpaperBuddy
 {
@@ -231,15 +232,15 @@ namespace WallpaperBuddy
             setWallpaper = false;
             deleteMax = -1;
             createFolders = false;
-            aspect = "landscape";
-            method = "R";
+            if (aspect == null) { aspect = "landscape"; }
+            if (method == null) { method = "R"; }
             // Xmin
-            resolutionMin = "0x0";
+            if (resolutionMin == null) { resolutionMin = "0x0"; }
             resolutionMinAvailable = false;
             userResWMin = 0;
             userResHMin = 0;
             // Xmax
-            resolutionMax = "0x0";
+            if (resolutionMax == null) { resolutionMax = "0x0"; }
             resolutionMaxAvailable = false;
             userResHMax = 0;
             userResWMax = 0;
@@ -258,7 +259,7 @@ namespace WallpaperBuddy
         {
             if (!checkValidOptions(validOptions, parameterValue))
             {
-                writeLog("ERROR: You specified a non valid aspect ration  (" + parameterValue + "), valid values are: " + string.Join(",", validOptions));
+                writeLog("ERROR: You specified a non valid aspect ratio  (" + parameterValue + "), valid values are: " + string.Join(",", validOptions));
                 Environment.Exit((int)ExitCode.WRONG_PARAMETER);
             }
             _aspect = parameterValue;
@@ -950,8 +951,20 @@ namespace WallpaperBuddy
                 imageResH = imageRes[1];
             } else
             {
-                // tries to get the image resolution from the remote file directly                
-                var imageSize = ImageUtilities.GetWebImageSize(URL);               
+                // tries to get the image resolution from the remote file directly    
+                var imageSize = new Size(0, 0);
+                // attempt #1 - get image size via image file headers
+                var imageSizeAlt = ImageUtilities.GetWebImageSize_Fast(new Uri(URL));
+                imageSize = imageSizeAlt.GetAwaiter().GetResult();
+                
+                if (imageSize.IsEmpty)
+                {
+                    // attempt #2 - get image size downloading the whole file, this will be much slower
+                    imageSize = ImageUtilities.GetWebImageSize_Slow(URL);
+                }
+
+                imageResW = imageSize.Width;
+                imageResH = imageSize.Height;
             }
 
             if (!resolutionMaxAvailable)
@@ -959,7 +972,7 @@ namespace WallpaperBuddy
                 userResHMax = imageResH;
                 userResWMax = imageResW;
             }
-
+            writeLog("Checking for image resolution max ("+userResWMax+"x"+userResHMax+") and orientation ("+aspect+")");
             if (imageResW > 0 && imageResH > 0)
             {
                 if (urlFound != "")
@@ -970,6 +983,7 @@ namespace WallpaperBuddy
                         {
                             if (imageResW > imageResH)
                             {
+                                writeLog("Image is landscape with resolution " + imageResW + "x" +imageResH);
                                 imagesCandidates.Add(urlFound);
                                 return true;
                             }
@@ -978,12 +992,14 @@ namespace WallpaperBuddy
                         {
                             if (imageResH > imageResW)
                             {
+                                writeLog("Image is portrait with resolution " + imageResW + "x" + imageResH);
                                 imagesCandidates.Add(urlFound);
                                 return true;
                             }
                         }
                         else
                         {
+                            writeLog("Image is any orientation with resolution " + imageResW + "x" + imageResH);
                             imagesCandidates.Add(urlFound);
                             return true;
                         }
