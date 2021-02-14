@@ -175,7 +175,7 @@ namespace WallpaperBuddy
         [Option("-S", CommandOptionType.NoValue, Description = "\t\t\tsilent mode, do not output stats/results in console")]
         public bool silent { get { return _silent; } set { _silent = value; } }
 
-        [Option("-W", CommandOptionType.SingleValue, Description = "\t\t\tset last downloaded image as desktop wallpaper (1)")]
+        [Option("-W", CommandOptionType.NoValue, Description = "\t\t\tset last downloaded image as desktop wallpaper (1)")]
         public bool setWallpaper { get { return _setWallpaper; } set { _setWallpaper = value; } }
 
         [Option("-D", CommandOptionType.SingleValue, Description = "#:\t\t\tkeep the size of the saving folder to # files - deleting the oldest")]
