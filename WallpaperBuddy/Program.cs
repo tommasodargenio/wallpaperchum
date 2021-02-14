@@ -865,10 +865,10 @@ namespace WallpaperBuddy
         }
 
         public bool weakImageValidation(string url)
-        {
-            string imageExtension = @"(http(s?):)([/|.|\w|\s|-])*\.(?:jp(e?)g|gif|png|bmp|tiff)";
+        {            
+            string imageExtension = @"(?:([^:/?#]+):)?(?://([^/?#]*))?([^?#]*\.(jpg|gif|png|bmp|tiff|jpeg))(?:\?([^#]*))?(?:#(.*))?";
             Regex rgx_Ext = new Regex(imageExtension);
-            Match checkExt = rgx_Ext.Match(url);
+            Match checkExt = rgx_Ext.Match(url.ToLower());
             if (checkExt.Success)
             {
                 return true;
