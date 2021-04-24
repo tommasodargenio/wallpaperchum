@@ -610,8 +610,15 @@ namespace WallpaperBuddy
                 // there are more files than required, delete the oldest until reached the desired amount of files -1
                 foreach (var fi in new DirectoryInfo(saveFolder).GetFiles().OrderByDescending(x => x.LastWriteTime).Skip(deleteMax))
                 {
-                    writeLog("Too many files. Deleting " + fi.FullName);
-                    fi.Delete();
+                    try
+                    {
+                        writeLog("Too many files. Deleting " + fi.FullName);
+                        fi.Delete();
+                    }
+                    catch (IOException e)
+                    {
+                        writeLog("Can't delete " + fi.FullName + " the file is currently used or locked");
+                    }
                 }
             }
             else
