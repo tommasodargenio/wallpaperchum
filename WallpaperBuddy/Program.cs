@@ -853,7 +853,6 @@ namespace WallpaperBuddy
                         {
                             return false;
                         }
-
                     }
                 }
                 catch
