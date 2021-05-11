@@ -178,6 +178,10 @@ namespace WallpaperBuddy
         [Option("-W", CommandOptionType.NoValue, Description = "\t\t\tset last downloaded image as desktop wallpaper (1)")]
         public bool setWallpaper { get { return _setWallpaper; } set { _setWallpaper = value; } }
 
+        [Option("-L", CommandOptionType.NoValue, Description = "\t\t\tset last downloaded image as lockscreen (3)")]
+        public bool setLockscreen { get { return _setLockscreen; } set { _setLockscreen = value; } }
+
+
         [Option("-D", CommandOptionType.SingleValue, Description = "#:\t\t\tkeep the size of the saving folder to # files - deleting the oldest")]
         public int deleteMax { get { return _deleteMax; } set { _deleteMax = Convert.ToInt32(value); } }
 
@@ -762,108 +766,49 @@ namespace WallpaperBuddy
             return exceptionFlag;
         }
 
-        /* Change Lockscreen settings via GPO changes
-         * library used: https://bitbucket.org/MartinEden/local-policy
-         * ref: http://www.lshift.net/blog/2013/03/25/programmatically-updating-local-policy-in-windows/
-         * author: Martin Eden
+        /*
+            Set the LockScreen image to the filename, this is done via a registry key change leveraging the Personalization CSP feature
+            ref: https://docs.microsoft.com/en-us/windows/client-management/mdm/personalization-csp
+
+            no hard-requirements for adding the keys to the registry directly, however this can be done via GPO policy editor but will require the SetEduPolicies in ShareCSP be enabled
+            via Intune. 
+
+            Enabling the PersonalizationCSP will prevent the user to manually change the lockscreen, however deleting the keys will restore the user's ability to edit the lockscreen settings
          */
-        public void setLockScreenGPO(string filename)
-        {
-            var gpo = new LocalPolicy.ComputerGroupPolicyObject();
-            const string keyPath = @"Software\Microsoft\Windows\CurrentVersion\Group Policy Objects\{1E2AC4AE-C9D5-4E5B-B2B9-F4C1FF9040F4}Machine\Software\Policies\Microsoft\Windows\Personalization";
-            
-            using(var machine = gpo.GetRootRegistryKey(LocalPolicy.GroupPolicySection.Machine))
-            {
-                using(var terminalServicesKey = machine.CreateSubKey(keyPath))
-                {
-                    terminalServicesKey.SetValue("LockScreenImage", filename, RegistryValueKind.String);
-                    terminalServicesKey.SetValue("NoChangingLockScreen", 1, RegistryValueKind.DWord);
-                }
-
-            }
-            gpo.Save();
-        }
-
         public void setLockScreenRegistry(string filename)
         {
 
-            RegistryKey myKey;
-            
-            myKey = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Group Policy Objects\{1E2AC4AE-C9D5-4E5B-B2B9-F4C1FF9040F4}Machine\Software\Policies\Microsoft\Windows\Personalization\LockScreenImage", true);
-            if (myKey == null)
-            {
-                // Key does not exist, create it
-                myKey = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Group Policy Objects\{1E2AC4AE-C9D5-4E5B-B2B9-F4C1FF9040F4}Machine\Software\Policies\Microsoft\Windows\Personalization\LockScreenImage");
-                
-            }
-
-            if (myKey == null)
-            {
-                writeLog("ERROR - Something went wrong while setting the lock screen, make sure to run the program with a user having administrative rights");
-                Environment.Exit(111);
-            }
-
-            myKey.SetValue("LockScreenImage", filename, RegistryValueKind.String);
-            myKey.Close();
-
-            // Disable the user's ability to change lock screen, this is the only way to make the Policy above works
-            myKey = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Group Policy Objects\{1E2AC4AE-C9D5-4E5B-B2B9-F4C1FF9040F4}Machine\Software\Policies\Microsoft\Windows\Personalization\NoChangingLockScreen", true);
-            if (myKey == null)
-            {
-                // Key does not exist, create it
-                myKey = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Group Policy Objects\{1E2AC4AE-C9D5-4E5B-B2B9-F4C1FF9040F4}Machine\Software\Policies\Microsoft\Windows\Personalization\NoChangingLockScreen");
-
-            }
-
-            if (myKey == null)
-            {
-                writeLog("ERROR - Something went wrong while setting the lock screen, make sure to run the program with a user having administrative rights");
-                Environment.Exit(111);
-            }
-
-            myKey.SetValue("NoChangingLockScreen", 1, RegistryValueKind.DWord);
+            RegistryKey personalizationCSP;
 
 
-            myKey.Close();
+            personalizationCSP = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\PersonalizationCSP", true);
 
-        }
-
-        // Set the last downloaded image as lockscreen
-        /*
-        static async void setLockScreen(string filename)
-        {
-            StorageFolder storageFolder = await StorageFolder.GetFolderFromPathAsync(Path.GetFullPath(filename));
-            StorageFile imageFile = await storageFolder.GetFileAsync(Path.GetFileName(filename));
-          
-            if (imageFile != null)
+            // Key does not exist, create it            
+            if (personalizationCSP == null)
             {
                 try
                 {
-                    // Application now has access to the picked file, setting image to lockscreen.  This will fail if the file is an invalid format. 
-                    await LockScreen.SetImageFileAsync(imageFile);
-                    writeLog("LockScreen.SetImageFileAsync called now with imageFile obj");
-
-                    // Retrieve the lock screen image that was set 
-                    IRandomAccessStream imageStream = LockScreen.GetImageStream();
-                    if (imageStream == null)
-                    {
-                        writeLog("ERROR - Setting the lock screen image failed.  Make sure your copy of Windows is activated.");
-                        Environment.Exit(108);
-                    }
+                    personalizationCSP = Registry.LocalMachine.CreateSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\PersonalizationCSP");
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
-                    writeLog("ERROR - Setting the lock screen image failed. Invalid image selected or error opening file");
-                    Environment.Exit(109);
+                    writeLog("ERROR - Something went wrong while setting the lock screen, make sure to run the program with a user having administrative rights");
+                    writeLog("Details: " + e.Message);
+                    Environment.Exit(111);
                 }
+                
             }
-            else
-            {
-                writeLog("ERROR - Setting the lock screen image failed. Image file not found");
-                Environment.Exit(110);
-            }
+            
+            // set the LockScreenImagePath with the image file path
+            personalizationCSP.SetValue("LockScreenImagePath", filename, RegistryValueKind.String);
+
+            personalizationCSP.SetValue("LockScreenImageStatus", 1, RegistryValueKind.DWord);
+
+            writeLog("Lockscreen set to: " + filename);
+
+            personalizationCSP.Close();
+
         }
-        */
         public void setWallPaper(string filename)
         {
             SystemParametersInfo(
@@ -1212,11 +1157,11 @@ namespace WallpaperBuddy
                 try
                 {
                     var destPath = "";
-                    /*if (setLockscreen && saveFolder == "")
+                    if (setLockscreen && saveFolder == null)
                     {
                         destPath = Path.GetTempPath();
-                    } else */
-                    if (setWallpaper && saveFolder == null)
+                    } 
+                    else if (setWallpaper && saveFolder == null)
                     {
                         destPath = Path.GetTempPath();
                     }
@@ -1253,16 +1198,15 @@ namespace WallpaperBuddy
                     
                     if (setWallpaper)
                     {
-                        writeLog("Setting Wallpaper: " + destPath + destFileName);
+                        writeLog("Setting Wallpaper: " + destPath + Path.DirectorySeparatorChar + destFileName);
                         setWallPaper(destPath + Path.DirectorySeparatorChar + destFileName);
                     }
-                    /*
+                    
                     if (setLockscreen)
                     {
                         writeLog("Setting Lock screen...");
-                        //setLockScreenGPO(destPath + destFileName);
-                        // setLockScreen(destPath + destFileName);
-                    }*/
+                        setLockScreenRegistry(destPath + Path.DirectorySeparatorChar + destFileName);
+                    }
 
                 }
                 catch (WebException webEx)
