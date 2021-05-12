@@ -57,6 +57,7 @@ using Microsoft.Win32;
 using System.Runtime.InteropServices;
 using System.Web;
 using System.Drawing;
+using System.Diagnostics;
 
 namespace WallpaperBuddy
 {
@@ -540,6 +541,19 @@ namespace WallpaperBuddy
             return colLetter;
         }
 
+        public string getExceptionLineNumber(Exception ex)
+        {
+            int n;
+            int i = ex.StackTrace.LastIndexOf(" ");
+            if (i > -1)
+            {
+                string s = ex.StackTrace.Substring(i + 1);
+                if (int.TryParse(s, out n))
+                    return n.ToString();
+            }
+            return "0";            
+        }
+
         // Output a log message to the stdout if silent option is off
         public void writeLog(string message, bool suppressTime = false)
         {
@@ -616,12 +630,12 @@ namespace WallpaperBuddy
                 {
                     try
                     {
-                        writeLog("Too many files. Deleting " + fi.FullName);
+                        writeLog("WARNING: Too many files. Deleting " + fi.FullName);
                         fi.Delete();
                     }
                     catch (IOException e)
                     {
-                        writeLog("Can't delete " + fi.FullName + " the file is currently used or locked");
+                        writeLog("ERROR [" + getExceptionLineNumber(e) + "]: Can't delete " + fi.FullName + " the file is currently used or locked");
                     }
                 }
             }
@@ -757,9 +771,7 @@ namespace WallpaperBuddy
             {
                 exceptionFlag = false;
 
-                writeLog("ERROR: There is a problem with your internet connection or " + host + " is down!");
-                writeLog("Excepetion details: " + ex.Message);
-
+                writeLog("ERROR [" + getExceptionLineNumber(ex) + "]: There is a problem with your internet connection or " + host + " is down!");
                 // Exit with error
                 Environment.Exit(103);
             }
@@ -792,8 +804,7 @@ namespace WallpaperBuddy
                 }
                 catch (Exception e)
                 {
-                    writeLog("ERROR - Something went wrong while setting the lock screen, make sure to run the program with a user having administrative rights");
-                    writeLog("Details: " + e.Message);
+                    writeLog("ERROR [" + getExceptionLineNumber(e) + "] - Something went wrong while setting the lock screen, make sure to run the program with a user having administrative rights");                    
                     Environment.Exit(111);
                 }
                 
@@ -805,6 +816,7 @@ namespace WallpaperBuddy
             personalizationCSP.SetValue("LockScreenImageStatus", 1, RegistryValueKind.DWord);
 
             writeLog("Lockscreen set to: " + filename);
+            writeLog("----> Note: This will prevent you to manually change the lockscreen settings. To unlock disable the lockscreen set with the -LF option");
 
             personalizationCSP.Close();
 
@@ -1175,8 +1187,14 @@ namespace WallpaperBuddy
 
                     ServicePointManager.Expect100Continue = true;
                     ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-                    Client.DownloadFile(imagesCandidates[idx], destPath + Path.DirectorySeparatorChar + destFileName);
-                    writeLog("Image saved at: " + destPath + Path.DirectorySeparatorChar + destFileName);
+                    if (!File.Exists(destPath + Path.DirectorySeparatorChar + destFileName))
+                    {
+                        Client.DownloadFile(imagesCandidates[idx], destPath + Path.DirectorySeparatorChar + destFileName);
+                        writeLog("Image saved at: " + destPath + Path.DirectorySeparatorChar + destFileName);
+                    } else
+                    {
+                        writeLog("Image " + destPath + Path.DirectorySeparatorChar + destFileName + " already exists -- skipping");
+                    }
                     // copy the file to the backup folder if defined
                     if (backupFolder!=null)
                     {
@@ -1210,7 +1228,7 @@ namespace WallpaperBuddy
                 }
                 catch (WebException webEx)
                 {
-                    writeLog("ERROR - " + webEx.ToString());
+                    writeLog("ERROR  [" + getExceptionLineNumber(webEx) + "]: Could not download the file " + imagesCandidates[idx]);
                     Environment.Exit((int)ExitCode.EXCEPTION_ERROR);
                 }
 
