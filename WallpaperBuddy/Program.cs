@@ -36,10 +36,13 @@
  * -renameString string:     the string to use as prefix for sequential renaming - requires -R sA or -R sN
  * -help:                    shows this screen
 
- * (1):                     This feature it's only available for Windows 8.x systems,
-                                                         the image will be saved in the system's temp folder if the saveTo option is not specified
-                                                         note that wallpaper image shuffle and lockscreen slide show will be disabled using this option
- * (2):                    For a list of valid region/culture please refer to http://msdn.microsoft.com/en-us/library/ee825488%28v=cs.20%29.aspx
+ * (1):                      The image will be saved in the system's temp folder if the saveTo option is not specified
+                             note that wallpaper image shuffle and lockscreen slide show will be disabled using this option
+
+ * (2):                      For a list of valid region/culture please refer to http://msdn.microsoft.com/en-us/library/ee825488%28v=cs.20%29.aspx
+ * 
+ * (3):                      The lockscreen feature will prevent you from changing the settings manually in Windows, 
+                             use the option -LF to unlock and reset the Windows settings
 
  * * You must run the application with a user account having writing permissions on the destination folder
  * **/
@@ -78,13 +81,21 @@ namespace WallpaperBuddy
         public const string appRuntimeName = "wallpaperbuddy";
         public const string appDescription = "Download random wallpapers for desktop and lockscreen";
         public const string appUsage = "Usage: WallpaperBuddy [options] [-help]";
-        public const string version = "1.0.0-beta.4";
+        public const string version = "1.0.0-beta.7";
 
         public const string FullVersionToString = appFullName + " v" + version + "\n" + appDescription + "\n\n" + appUsage + "\n\n";
         public const string ShortVersionToString = appFullName + " v" + version;        
     }
 
+    [Command(ExtendedHelpText = @"
+  (1):                                  The image will be saved in the system's temp folder if the saveTo option is not specified
+                                        note that wallpaper image shuffle and lockscreen slide show will be disabled using this option
 
+  (2):                                  For a list of valid region/culture please refer to http://msdn.microsoft.com/en-us/library/ee825488%28v=cs.20%29.aspx
+
+  (3):                                  The lockscreen feature will prevent you from changing the settings manually in Windows, 
+                                        use the option -LF to unlock and reset the Windows settings
+")]
     [VersionOption(appIdentity.FullVersionToString)]
     public class Program
     {
@@ -197,9 +208,6 @@ namespace WallpaperBuddy
 
         [Option("-renameString", CommandOptionType.SingleValue, Description = "string:\t\tthe string to use as prefix for sequential renaming - requires -R sA or -R sN")]
         public string renameString { get { return _renameString; } set { _renameString = value; } }
-
-        //addParameter("-help", "-help:                    shows this screen", "showHelp");
-
 
         #region Private Internal Properties 
         private static string urlFound = "";
