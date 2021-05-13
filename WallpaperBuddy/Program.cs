@@ -60,7 +60,7 @@ using Microsoft.Win32;
 using System.Runtime.InteropServices;
 using System.Web;
 using System.Drawing;
-using System.Diagnostics;
+
 
 namespace WallpaperBuddy
 {
