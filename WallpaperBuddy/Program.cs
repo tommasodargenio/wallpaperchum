@@ -110,6 +110,7 @@ namespace WallpaperBuddy
         private string _renameString;
         private bool _setLockscreen;
         private bool _setWallpaper;
+        private bool _resetLockscreen;
         private string _getLocalFile;
         private string _resolutionMin;
         private string _resolutionMax;
@@ -192,6 +193,9 @@ namespace WallpaperBuddy
 
         [Option("-L", CommandOptionType.NoValue, Description = "\t\t\tset last downloaded image as lockscreen (3)")]
         public bool setLockscreen { get { return _setLockscreen; } set { _setLockscreen = value; } }
+
+        [Option("-LF", CommandOptionType.NoValue, Description = "\t\t\treset the lockscreen settings to default")]
+        public bool resetLockscreen { get { return _resetLockscreen; } set { _resetLockscreen = value; } }
 
 
         [Option("-D", CommandOptionType.SingleValue, Description = "#:\t\t\tkeep the size of the saving folder to # files - deleting the oldest")]
@@ -786,6 +790,33 @@ namespace WallpaperBuddy
             return exceptionFlag;
         }
 
+        /* Reset the Windows Lockscreen settings to default, thus allowing the user to manage them manually. This are locked as a consequence of using the setLockScreenRegistry method*/
+        public void resetLockScreenRegistry()
+        {
+            RegistryKey personalizationCSP;
+            personalizationCSP = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\PersonalizationCSP", true);
+
+            if (personalizationCSP == null)
+            {
+                writeLog("WARNING: Could not reset the lockscreen settings, no previous lock found");
+            }
+            else
+            {
+                try
+                {
+                    Registry.LocalMachine.DeleteSubKeyTree(@"SOFTWARE\Microsoft\Windows\CurrentVersion\PersonalizationCSP");
+                    writeLog("INFO: Lockscreen settings reset");
+                }
+                catch(Exception ex)
+                {
+                    writeLog("ERROR [" + getExceptionLineNumber(ex) + "]: Something went wrong while resetting the lock screen settings, make sure to run the program with a user having administrative rights");
+                    writeLog(ex.Message);
+                    Environment.Exit(111);
+                }
+            }
+            personalizationCSP.Close();
+        }
+
         /*
             Set the LockScreen image to the filename, this is done via a registry key change leveraging the Personalization CSP feature
             ref: https://docs.microsoft.com/en-us/windows/client-management/mdm/personalization-csp
@@ -1086,6 +1117,11 @@ namespace WallpaperBuddy
             // flag for exceptions
             bool exceptionFlag;
 
+            if (resetLockscreen)
+            {
+                resetLockScreenRegistry();
+            }
+
             if (_rssURL != null)
             {
                 
@@ -1245,6 +1281,8 @@ namespace WallpaperBuddy
             {
                 writeLog("No valid images where found in the feed or invalid feed provided");
             }
+
+
 
             //get the page
             return 0;
