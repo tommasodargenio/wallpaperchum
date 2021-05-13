@@ -197,7 +197,6 @@ namespace WallpaperBuddy
         [Option("-LF", CommandOptionType.NoValue, Description = "\t\t\treset the lockscreen settings to default")]
         public bool resetLockscreen { get { return _resetLockscreen; } set { _resetLockscreen = value; } }
 
-
         [Option("-D", CommandOptionType.SingleValue, Description = "#:\t\t\tkeep the size of the saving folder to # files - deleting the oldest")]
         public int deleteMax { get { return _deleteMax; } set { _deleteMax = Convert.ToInt32(value); } }
 
@@ -817,6 +816,7 @@ namespace WallpaperBuddy
             personalizationCSP.Close();
         }
 
+
         /*
             Set the LockScreen image to the filename, this is done via a registry key change leveraging the Personalization CSP feature
             ref: https://docs.microsoft.com/en-us/windows/client-management/mdm/personalization-csp
@@ -843,7 +843,7 @@ namespace WallpaperBuddy
                 }
                 catch (Exception e)
                 {
-                    writeLog("ERROR [" + getExceptionLineNumber(e) + "] - Something went wrong while setting the lock screen, make sure to run the program with a user having administrative rights");                    
+                    writeLog("ERROR [" + getExceptionLineNumber(e) + "] - Something went wrong while setting the lock screen, make sure to run the application in a Run As Administrator command prompt\n or in a task set to Run with Highest privileges");                    
                     Environment.Exit(111);
                 }
                 
@@ -1130,7 +1130,7 @@ namespace WallpaperBuddy
             else
             {
                 // Exit with error
-                writeLog("ERROR - Source has not been specified, there is nothing else to do");
+                writeLog("WARNING: Source has not been specified, there is nothing else to do");
                 Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
             }
 
@@ -1139,7 +1139,7 @@ namespace WallpaperBuddy
                 if (channelName == "" || channelName == null)
                 {
                     // Exit with error
-                    writeLog("ERROR - You must specify a channel (option -C channelname) when using Reddit or DeviantArt as source and it cannot be blank");
+                    writeLog("ERROR: You must specify a channel (option -C channelname) when using Reddit or DeviantArt as source and it cannot be blank");
                     Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
 
                 }
@@ -1265,7 +1265,7 @@ namespace WallpaperBuddy
                     
                     if (setLockscreen)
                     {
-                        writeLog("Setting Lock screen...");
+                        writeLog("Setting Lock screen...");                        
                         setLockScreenRegistry(destPath + Path.DirectorySeparatorChar + destFileName);
                     }
 
