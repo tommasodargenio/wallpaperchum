@@ -45,8 +45,4 @@
   <ProjectExtensions>
     <VisualStudio AllowExistingFolder="true" />
   </ProjectExtensions>
-  <AllowedReferenceRelatedFileExtensions>
-    *.pdb;
-    *.xml
-  </AllowedReferenceRelatedFileExtensions>
 </Project>

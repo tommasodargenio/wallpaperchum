@@ -128,6 +128,8 @@ namespace WallpaperBuddy
         private string _method;
         private string _rssType;
         private string _setStaticWallpaper;
+        private string _deviantArtist;
+        private string _deviantTag;
         #endregion
 
         #region Public Properties
@@ -150,7 +152,13 @@ namespace WallpaperBuddy
                                "\t\t\t[D]eviantArt download from a topic on DeviantArt.com, use -C ChannelName to specify the topic\n")]
         public string rssType { get { return _rssType; } set { setRSS(new string[] { "B", "R", "D" }, value); } }
 
-        [Option("-C", CommandOptionType.SingleValue, Description = "channelName:\t\tspecify from which subreddit or deviantart topic to downloade the image from")]
+        [Option ("-deviantArtist", CommandOptionType.SingleValue, Description = "artist name:\t\t\tspecify the name of the DeviantArt Artist to download the image from")]
+        public string deviantArtist { get { return _deviantArtist; } set { setDeviantArtist(value); } }
+        
+        [Option("-deviantTag", CommandOptionType.SingleValue, Description = "tag:\t\t\tspecify a tag to filter the DeviantArt wallpapers on")]
+        public string deviantTag { get { return _deviantTag; } set { setDeviantTag(value); } }
+
+        [Option("-C", CommandOptionType.SingleValue, Description = "channelName:\t\tspecify from which subreddit or deviantart topic to download the image from")]
         public string channelName { get { return _channelName; } set { setChannelName(value); } }
 
         [Option("-Y", CommandOptionType.NoValue, Description = "\t\t\tif the saving folder do not exists, create it")]
@@ -382,6 +390,28 @@ namespace WallpaperBuddy
             setWallPaper(_setStaticWallpaper);
             Environment.Exit(0);
         }
+        
+        public void setDeviantArtist(string value)
+        {
+            if (_channelName != "")
+            {
+                return;
+            }
+
+            _deviantArtist = value;
+            _rssURL = _rssURL.Replace("%channel%", "gallery:" + value);
+        }
+
+        public void setDeviantTag(string value)
+        {
+            if (_deviantArtist != "")
+            {
+                return;
+            }
+            _rssURL += "+sort:time+tag:" + value;
+            _deviantTag = value;
+        }
+        
         public void setChannelName(string parameterValue) {
             bool isChannel = false;
 
@@ -771,9 +801,16 @@ namespace WallpaperBuddy
 
             try
             {
+                ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
+                
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls
+                                                        | SecurityProtocolType.Tls11
+                                                        | SecurityProtocolType.Tls12
+                                                        | SecurityProtocolType.Ssl3;
                 request = (HttpWebRequest)WebRequest.Create(URL);
                 // get only the headers  
                 request.Method = WebRequestMethods.Http.Head;
+            
                 response = (HttpWebResponse)request.GetResponse();
                 // status checking  
                 exceptionFlag = response.StatusCode == HttpStatusCode.OK;
@@ -783,8 +820,9 @@ namespace WallpaperBuddy
                 exceptionFlag = false;
 
                 writeLog("ERROR [" + getExceptionLineNumber(ex) + "]: There is a problem with your internet connection or " + host + " is down!");
+                writeLog(ex.Message);
                 // Exit with error
-                Environment.Exit(103);
+                Environment.Exit(123);
             }
             return exceptionFlag;
         }
@@ -1037,6 +1075,19 @@ namespace WallpaperBuddy
 
         public void processDeviantXML(XmlReader reader)
         {
+            // Uses MediaRSS
+            // RSS FEED URL
+
+            // Artist feed
+            // https://backend.deviantart.com/rss.xml?q=gallery:artistname
+            // examplte: https://backend.deviantart.com/rss.xml?q=gallery:solaris07
+
+            // SciFi Wallpaper feed - sorted by time desc
+            // https://backend.deviantart.com/rss.xml?q=wallpaper+sort:time+tag:scifi
+
+            writeLog(reader.Name.ToString());
+
+            
 
         }
         public void processRedditXML(XmlReader reader)
@@ -1134,7 +1185,7 @@ namespace WallpaperBuddy
                 Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
             }
 
-            if (rssType == "REDDIT" || rssType == "DEVIANTART")
+            if (rssType == "REDDIT")
             {
                 if (channelName == "" || channelName == null)
                 {
@@ -1154,10 +1205,12 @@ namespace WallpaperBuddy
                 }
             }
 
+            writeLog("Start RSS download from " + URL);
+
             // check if source is up - might be down or there may be internet connection issues
             exceptionFlag = checkInternetConnection(URL);
 
-            writeLog("Start RSS download from " + URL);
+            
 
             XmlReader reader = XmlReader.Create(URL);
 
