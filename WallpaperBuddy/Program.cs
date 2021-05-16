@@ -154,7 +154,7 @@ namespace WallpaperBuddy
                                "\t\t\t[D]eviantArt download from a topic on DeviantArt.com, use -C ChannelName to specify the topic\n")]
         public string rssType { get { return _rssType; } set { setRSS(new string[] { "B", "R", "D" }, value); } }
 
-        [Option ("-deviantArtist", CommandOptionType.SingleValue, Description = "artist name:\t\t\tspecify the name of the DeviantArt Artist to download the image from")]
+        [Option ("-deviantArtist", CommandOptionType.SingleValue, Description = "artistName:\t\t\tspecify the name of the DeviantArt Artist to download the image from")]
         public string deviantArtist { get { return _deviantArtist; } set { setDeviantArtist(value); } }
         
         [Option("-deviantTag", CommandOptionType.SingleValue, Description = "tag:\t\t\tspecify a tag to filter the DeviantArt wallpapers on")]
@@ -392,10 +392,11 @@ namespace WallpaperBuddy
         
         public void setDeviantArtist(string value)
         {
-            if (_channelName != "")
-            {
-                return;
-            }
+            //if (_channelName != "")
+            //{
+            //    return;
+            //}
+
 
             _deviantArtist = value;
             _rssURL = _rssURL.Replace("%channel%", "gallery:" + value);
@@ -830,9 +831,7 @@ namespace WallpaperBuddy
         public async Task setLockScreenUWP(string filename)
         {
             if (UserProfilePersonalizationSettings.IsSupported())
-            {
-                UserProfilePersonalizationSettings userSettings = UserProfilePersonalizationSettings.Current;
-               
+            {  
                 StorageFile file = await StorageFile.GetFileFromPathAsync(filename);
                 writeLog("Lockscreen set to: "+file.DisplayName);
                 await LockScreen.SetImageFileAsync(file);
@@ -1030,39 +1029,61 @@ namespace WallpaperBuddy
             // https://backend.deviantart.com/rss.xml?q=wallpaper+sort:time+tag:scifi
 
             HtmlDocument doc = new HtmlDocument();
-            reader.ReadToDescendant("item");
-            XmlReader item = reader.ReadSubtree();
+            //reader.ReadToDescendant("item");
 
-            string titlea = "";
-            item.ReadToDescendant("title");
-            titlea += item.ReadElementContentAsString();
+            //XmlReader item = reader.ReadSubtree();
 
-            item.ReadToDescendant("media:credit");
+            //item.ReadToDescendant("description");
+            //string desc = item.ReadElementContentAsString();
 
-            item.ReadToDescendant("description");
-            string desc = item.ReadElementContentAsString();
-
-            
-
-            switch (reader.Name.ToString())
+            if (reader.Name.ToString() == "description")
             {
-                case "description":
-                    string entry = reader.ReadString();
+                string desc = reader.ReadString();
+                doc.LoadHtml(desc);
+                var checkImg = doc.DocumentNode.SelectNodes("//img");
+                
+                if (checkImg != null)
+                {
+                    var imgSrc = checkImg.Select(p => p.GetAttributeValue("src", "not found")).ToList();
+                    if (imgSrc.Count() > 0)
+                    {
+                        var imgFound = imgSrc[0];
+                        Uri imgUri = new Uri(imgFound);
+                        var filename = imgUri.Segments[3].Substring(0, imgUri.Segments[3].IndexOf("/"));
+                        urlFound = imgUri.Scheme + "://" + imgUri.DnsSafeHost + imgUri.Segments[0] + imgUri.Segments[1] + imgUri.Segments[2] + filename + imgUri.Query;
+                        
+                        var caption = imgUri.Segments[7].Split('.')[0];
+                        if (extractImage(urlFound, caption))
+                        {
+                            imagesCaptions.Add(caption);
+                        }
+                        
+                        //writeLog("deviant url found[" + caption + "]: " + urlFound);
+                    }
 
-                    doc.LoadHtml(entry);
-                    var imgSrc = doc.DocumentNode.SelectNodes("//img")
-                                    .Select(p => p.GetAttributeValue("src", "not found"))
-                                    .ToList();
+                }
 
-                    break;
-                case "title":
-                    string title = reader.ReadString();
-                    break;
-                case "media":
-                    entry = reader.ReadString();
-
-                    break;
             }
+
+            //switch (reader.Name.ToString())
+            //{
+            //    case "description":
+            //        string entry = reader.ReadString();
+
+            //        //doc.LoadHtml(entry);
+            //        //var imgSrc = doc.DocumentNode.SelectNodes("//img")
+            //        //                .Select(p => p.GetAttributeValue("src", "not found"))
+            //        //                .ToList();
+
+            //        break;
+            //    case "title":
+            //        string title = reader.ReadString();
+            //        break;
+            //    case "media":
+            //        entry = reader.ReadString();
+
+            //        break;
+            //}
 
 
         }
@@ -1131,7 +1152,7 @@ namespace WallpaperBuddy
                     fileName = urlFoundUri.Segments[1];
                     break;
                 case "DEVIANTART":
-                    fileName = "";
+                    fileName = urlFoundUri.Segments[3];
                     break;
             }
             return fileName;
@@ -1298,7 +1319,7 @@ namespace WallpaperBuddy
                 }
                 catch (WebException webEx)
                 {
-                    writeLog("ERROR  [" + getExceptionLineNumber(webEx) + "]: Could not download the file " + imagesCandidates[idx]);
+                    writeLog("ERROR  [" + getExceptionLineNumber(webEx) + "]: Could not download the file " + imagesCandidates[idx] + " attempting to save it as: " + destFileName);
                     Environment.Exit((int)ExitCode.EXCEPTION_ERROR);
                 }
 
