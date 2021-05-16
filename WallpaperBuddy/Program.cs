@@ -60,7 +60,10 @@ using Microsoft.Win32;
 using System.Runtime.InteropServices;
 using System.Web;
 using System.Drawing;
-
+using Windows.System.UserProfile;
+using Windows.Foundation;
+using System.Threading.Tasks;
+using Windows.Storage;
 
 namespace WallpaperBuddy
 {
@@ -109,8 +112,7 @@ namespace WallpaperBuddy
         private string _rename;
         private string _renameString;
         private bool _setLockscreen;
-        private bool _setWallpaper;
-        private bool _resetLockscreen;
+        private bool _setWallpaper;        
         private string _getLocalFile;
         private string _resolutionMin;
         private string _resolutionMax;
@@ -201,9 +203,6 @@ namespace WallpaperBuddy
 
         [Option("-L", CommandOptionType.NoValue, Description = "\t\t\tset last downloaded image as lockscreen (3)")]
         public bool setLockscreen { get { return _setLockscreen; } set { _setLockscreen = value; } }
-
-        [Option("-LF", CommandOptionType.NoValue, Description = "\t\t\treset the lockscreen settings to default")]
-        public bool resetLockscreen { get { return _resetLockscreen; } set { _resetLockscreen = value; } }
 
         [Option("-D", CommandOptionType.SingleValue, Description = "#:\t\t\tkeep the size of the saving folder to # files - deleting the oldest")]
         public int deleteMax { get { return _deleteMax; } set { _deleteMax = Convert.ToInt32(value); } }
@@ -523,7 +522,7 @@ namespace WallpaperBuddy
 
         
         
-        private void OnExecute(CommandLineApplication app)
+        private async Task OnExecute(CommandLineApplication app)
         {
             if (app.GetOptions().All(o=>!o.HasValue()))
             {
@@ -533,7 +532,7 @@ namespace WallpaperBuddy
             writeLog(appIdentity.FullVersionToString, true);
             writeLog("----Start Processing----", true);
             initDefaults();
-            processRSS();
+            await processRSS();
 
             if (_rssURL == null)
             {
@@ -779,7 +778,7 @@ namespace WallpaperBuddy
             {
                 destFileName = Path.GetFileName(fName);
             }
-
+            writeLog("Image renamed from: " + fName + " to: " + destFileName);
             return destFileName;
         }
 
@@ -827,76 +826,21 @@ namespace WallpaperBuddy
             return exceptionFlag;
         }
 
-        /* Reset the Windows Lockscreen settings to default, thus allowing the user to manage them manually. This are locked as a consequence of using the setLockScreenRegistry method*/
-        public void resetLockScreenRegistry()
-        {
-            RegistryKey personalizationCSP;
-            personalizationCSP = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\PersonalizationCSP", true);
 
-            if (personalizationCSP == null)
+        public async Task setLockScreenUWP(string filename)
+        {
+            if (UserProfilePersonalizationSettings.IsSupported())
             {
-                writeLog("WARNING: Could not reset the lockscreen settings, no previous lock found");
+                UserProfilePersonalizationSettings userSettings = UserProfilePersonalizationSettings.Current;
+               
+                StorageFile file = await StorageFile.GetFileFromPathAsync(filename);
+                writeLog("Lockscreen set to: "+file.DisplayName);
+                await LockScreen.SetImageFileAsync(file);
             }
             else
             {
-                try
-                {
-                    Registry.LocalMachine.DeleteSubKeyTree(@"SOFTWARE\Microsoft\Windows\CurrentVersion\PersonalizationCSP");
-                    writeLog("INFO: Lockscreen settings reset");
-                }
-                catch(Exception ex)
-                {
-                    writeLog("ERROR [" + getExceptionLineNumber(ex) + "]: Something went wrong while resetting the lock screen settings, make sure to run the program with a user having administrative rights");
-                    writeLog(ex.Message);
-                    Environment.Exit(111);
-                }
+                writeLog("WARNING: Cannot set the lockscreen as the User Profile API is not supported");
             }
-            personalizationCSP.Close();
-        }
-
-
-        /*
-            Set the LockScreen image to the filename, this is done via a registry key change leveraging the Personalization CSP feature
-            ref: https://docs.microsoft.com/en-us/windows/client-management/mdm/personalization-csp
-
-            no hard-requirements for adding the keys to the registry directly, however this can be done via GPO policy editor but will require the SetEduPolicies in ShareCSP be enabled
-            via Intune. 
-
-            Enabling the PersonalizationCSP will prevent the user to manually change the lockscreen, however deleting the keys will restore the user's ability to edit the lockscreen settings
-         */
-        public void setLockScreenRegistry(string filename)
-        {
-
-            RegistryKey personalizationCSP;
-
-
-            personalizationCSP = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\PersonalizationCSP", true);
-
-            // Key does not exist, create it            
-            if (personalizationCSP == null)
-            {
-                try
-                {
-                    personalizationCSP = Registry.LocalMachine.CreateSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\PersonalizationCSP");
-                }
-                catch (Exception e)
-                {
-                    writeLog("ERROR [" + getExceptionLineNumber(e) + "] - Something went wrong while setting the lock screen, make sure to run the application in a Run As Administrator command prompt\n or in a task set to Run with Highest privileges");                    
-                    Environment.Exit(111);
-                }
-                
-            }
-            
-            // set the LockScreenImagePath with the image file path
-            personalizationCSP.SetValue("LockScreenImagePath", filename, RegistryValueKind.String);
-
-            personalizationCSP.SetValue("LockScreenImageStatus", 1, RegistryValueKind.DWord);
-
-            writeLog("Lockscreen set to: " + filename);
-            writeLog("----> Note: This will prevent you to manually change the lockscreen settings. To unlock disable the lockscreen set with the -LF option");
-
-            personalizationCSP.Close();
-
         }
         public void setWallPaper(string filename)
         {
@@ -982,7 +926,7 @@ namespace WallpaperBuddy
             } else
             {
                 // tries to get the image resolution from the remote file directly    
-                var imageSize = new Size(0, 0);
+                var imageSize = new System.Drawing.Size(0, 0);
                 // attempt #1 - get image size via image file headers
                 var imageSizeAlt = ImageUtilities.GetWebImageSize_Fast(new Uri(URL));
                 imageSize = imageSizeAlt.GetAwaiter().GetResult();
@@ -1085,9 +1029,41 @@ namespace WallpaperBuddy
             // SciFi Wallpaper feed - sorted by time desc
             // https://backend.deviantart.com/rss.xml?q=wallpaper+sort:time+tag:scifi
 
-            writeLog(reader.Name.ToString());
+            HtmlDocument doc = new HtmlDocument();
+            reader.ReadToDescendant("item");
+            XmlReader item = reader.ReadSubtree();
+
+            string titlea = "";
+            item.ReadToDescendant("title");
+            titlea += item.ReadElementContentAsString();
+
+            item.ReadToDescendant("media:credit");
+
+            item.ReadToDescendant("description");
+            string desc = item.ReadElementContentAsString();
 
             
+
+            switch (reader.Name.ToString())
+            {
+                case "description":
+                    string entry = reader.ReadString();
+
+                    doc.LoadHtml(entry);
+                    var imgSrc = doc.DocumentNode.SelectNodes("//img")
+                                    .Select(p => p.GetAttributeValue("src", "not found"))
+                                    .ToList();
+
+                    break;
+                case "title":
+                    string title = reader.ReadString();
+                    break;
+                case "media":
+                    entry = reader.ReadString();
+
+                    break;
+            }
+
 
         }
         public void processRedditXML(XmlReader reader)
@@ -1161,17 +1137,12 @@ namespace WallpaperBuddy
             return fileName;
         }
 
-        private int processRSS()
+        private async Task processRSS()
         {
             string URL = "";
 
             // flag for exceptions
             bool exceptionFlag;
-
-            if (resetLockscreen)
-            {
-                resetLockScreenRegistry();
-            }
 
             if (_rssURL != null)
             {
@@ -1318,9 +1289,11 @@ namespace WallpaperBuddy
                     
                     if (setLockscreen)
                     {
-                        writeLog("Setting Lock screen...");                        
-                        setLockScreenRegistry(destPath + Path.DirectorySeparatorChar + destFileName);
+                        writeLog("Setting Lock screen...");
+                        await setLockScreenUWP(destPath + Path.DirectorySeparatorChar + destFileName);
+                        //setLockScreenRegistry(destPath + Path.DirectorySeparatorChar + destFileName);
                     }
+
 
                 }
                 catch (WebException webEx)
@@ -1335,10 +1308,6 @@ namespace WallpaperBuddy
                 writeLog("No valid images where found in the feed or invalid feed provided");
             }
 
-
-
-            //get the page
-            return 0;
         }     
     }
 }
