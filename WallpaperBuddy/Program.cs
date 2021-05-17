@@ -139,6 +139,7 @@ namespace WallpaperBuddy
         private string _setStaticWallpaper;
         private string _deviantArtist;
         private string _deviantTag;
+        private string _deviantTopic;
         #endregion
 
         #region Public Properties
@@ -163,7 +164,10 @@ namespace WallpaperBuddy
 
         [Option ("-deviantArtist", CommandOptionType.SingleValue, Description = "artistName:\t\t\tspecify the name of the DeviantArt Artist to download the image from")]
         public string deviantArtist { get { return _deviantArtist; } set { setDeviantArtist(value); } }
-        
+
+        [Option("-deviantTopic", CommandOptionType.SingleValue, Description = "topic:\t\t\tspecify the name of the DeviantArt Topic to download the image from")]
+        public string deviantTopic { get { return _deviantTopic; } set { setDeviantTopic(value); } }
+
         [Option("-deviantTag", CommandOptionType.SingleValue, Description = "tag:\t\t\tspecify a tag to filter the DeviantArt wallpapers on")]
         public string deviantTag { get { return _deviantTag; } set { setDeviantTag(value); } }
 
@@ -401,9 +405,15 @@ namespace WallpaperBuddy
         {
             if (_deviantTag != null)
             {
-                writeLog("[ERROR] Deviant Tag already set (" + _deviantTag + "). You can use either the tag or the artist but not both");
+                writeLog("[ERROR] Deviant Tag already set (" + _deviantTag + "). You can only use one option between artist, tag or topic");
                 Environment.Exit((int)ExitCode.WRONG_PARAMETER);
             }
+            if (_deviantTopic != null)
+            {
+                writeLog("[ERROR] Deviant Topic already set (" + _deviantTopic + "). You can only use one option between artist, tag or topic");
+                Environment.Exit((int)ExitCode.WRONG_PARAMETER);
+            }
+
             _deviantArtist = value;
         }
 
@@ -411,12 +421,31 @@ namespace WallpaperBuddy
         {
             if (_deviantArtist != null)
             {
-                writeLog("[ERROR] Deviant Artist already set (" + _deviantArtist + "). You can use either the tag or the artist but not both");
+                writeLog("[ERROR] Deviant Artist already set (" + _deviantArtist + "). You can only use one option between artist, tag or topic");
+                Environment.Exit((int)ExitCode.WRONG_PARAMETER);
+            }
+            if (_deviantTopic != null)
+            {
+                writeLog("[ERROR] Deviant Topic already set (" + _deviantTopic + "). You can only use one option between artist, tag or topic");
                 Environment.Exit((int)ExitCode.WRONG_PARAMETER);
             }
             _deviantTag = value;
         }
-        
+        public void setDeviantTopic(string value)
+        {
+            if (_deviantArtist != null)
+            {
+                writeLog("[ERROR] Deviant Artist already set (" + _deviantArtist + "). You can only use one option between artist, tag or topic");
+                Environment.Exit((int)ExitCode.WRONG_PARAMETER);
+            }
+            if (_deviantTag != null)
+            {
+                writeLog("[ERROR] Deviant Tag already set (" + _deviantTag + "). You can only use one option between artist, tag or topic");
+                Environment.Exit((int)ExitCode.WRONG_PARAMETER);
+            }
+            _deviantTopic = value;
+        }
+
         public void setChannelName(string parameterValue) {
             bool isChannel = false;
 
@@ -1045,6 +1074,7 @@ namespace WallpaperBuddy
             string requestToken = "https://www.deviantart.com/oauth2/token?grant_type=client_credentials&client_id=%client_id%&client_secret=%client_secret%";
             string getTagGallery = "https://www.deviantart.com/api/v1/oauth2/browse/tags?tag=%tag%&limit=%limit%&with_session=false&mature_content=true&access_token=%token%";
             string getUserGallery = "https://www.deviantart.com/api/v1/oauth2/gallery/all?username=%deviant_artist%&limit=%limit%&with_session=false&mature_content=true&access_token=%token%";
+            string getTopicGallery = "https://www.deviantart.com/api/v1/oauth2/browse/topic?topic=%topic%&limit=%limit%&with_session=false&mature_content=true&access_token=%token%";
             string token = "";
 
             
@@ -1057,10 +1087,13 @@ namespace WallpaperBuddy
             getUserGallery = getUserGallery.Replace("%deviant_artist%", deviantArtist);
             getUserGallery = getUserGallery.Replace("%limit%", "24");
 
+            getTopicGallery = getTopicGallery.Replace("%topic%", deviantTopic);
+            getTopicGallery = getTopicGallery.Replace("%limit%", "24");
 
-            if (deviantArtist == "" && deviantTag == "")
+
+            if (deviantArtist == null && deviantTag == null && deviantTopic == null)
             {
-                writeLog("[ERROR]: You must specify an artist or a tag to download wallpapers from DeviantArt - see the help for more details");
+                writeLog("[ERROR]: You must specify an artist or a tag or a topic to download wallpapers from DeviantArt - see the help for more details");
                 Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
             }
 
@@ -1093,6 +1126,11 @@ namespace WallpaperBuddy
                     type = "artist : " + deviantArtist;
                 }
                 
+                if (deviantTopic != null)
+                {
+                    endpoint = getTopicGallery.Replace("%token%", token);
+                    type = "topic : " + deviantTopic;
+                }
                 using(var client = new HttpClient())
                 {
 
@@ -1105,7 +1143,7 @@ namespace WallpaperBuddy
                     var result = responseParsed.GetValue("results");
 
                     writeLog("[INFO] Found: " + result.Count() + " deviations");
-                    // go through all found and add do extraimage ? add to imagecaption?
+                    
 
                     if (result.Count() > 0 )
                     {
