@@ -64,6 +64,8 @@ using Windows.System.UserProfile;
 using Windows.Foundation;
 using System.Threading.Tasks;
 using Windows.Storage;
+using System.Net.Http;
+using Newtonsoft.Json.Linq;
 
 namespace WallpaperBuddy
 {
@@ -82,12 +84,17 @@ namespace WallpaperBuddy
     {
         public const string appFullName = "Wallpaper Buddy";
         public const string appRuntimeName = "wallpaperbuddy";
-        public const string appDescription = "Download random wallpapers for desktop and lockscreen";
+        public const string appDescription = "Download random wallpapers from selected sources for desktop and lockscreen";
         public const string appUsage = "Usage: WallpaperBuddy [options] [-help]";
-        public const string version = "1.0.0-beta.7";
+        public const string version = "1.0.0-beta.8";
+        public static readonly string deviantArtClientId = "***REMOVED***";
+        public static readonly string deviantArtClientSecret = "***REMOVED***";
 
         public const string FullVersionToString = appFullName + " v" + version + "\n" + appDescription + "\n\n" + appUsage + "\n\n";
         public const string ShortVersionToString = appFullName + " v" + version;        
+
+        
+
     }
 
     [Command(ExtendedHelpText = @"
@@ -392,23 +399,21 @@ namespace WallpaperBuddy
         
         public void setDeviantArtist(string value)
         {
-            //if (_channelName != "")
-            //{
-            //    return;
-            //}
-
-
+            if (_deviantTag != null)
+            {
+                writeLog("[ERROR] Deviant Tag already set (" + _deviantTag + "). You can use either the tag or the artist but not both");
+                Environment.Exit((int)ExitCode.WRONG_PARAMETER);
+            }
             _deviantArtist = value;
-            _rssURL = _rssURL.Replace("%channel%", "gallery:" + value);
         }
 
         public void setDeviantTag(string value)
         {
-            if (_deviantArtist != "")
+            if (_deviantArtist != null)
             {
-                return;
+                writeLog("[ERROR] Deviant Artist already set (" + _deviantArtist + "). You can use either the tag or the artist but not both");
+                Environment.Exit((int)ExitCode.WRONG_PARAMETER);
             }
-            _rssURL += "+sort:time+tag:" + value;
             _deviantTag = value;
         }
         
@@ -532,7 +537,7 @@ namespace WallpaperBuddy
             }
             writeLog(appIdentity.FullVersionToString, true);
             writeLog("----Start Processing----", true);
-            initDefaults();
+            initDefaults();            
             await processRSS();
 
             if (_rssURL == null)
@@ -897,8 +902,8 @@ namespace WallpaperBuddy
             }
         }
 
-        public bool extractImage(string URL, string title)
-        {
+        public bool extractImage(string URL, string title, int[] imageResSet = null)
+        {            
             // check if URL is valid
             if (URL == "" || URL == null)
             {
@@ -917,27 +922,45 @@ namespace WallpaperBuddy
             int imageResH = 0;
             if (!strongImageValidation)
             {
-                // tries to get the image resolution from the title
-                int[] imageRes = processResolution(title);
-
-                imageResW = imageRes[0];
-                imageResH = imageRes[1];
-            } else
-            {
-                // tries to get the image resolution from the remote file directly    
-                var imageSize = new System.Drawing.Size(0, 0);
-                // attempt #1 - get image size via image file headers
-                var imageSizeAlt = ImageUtilities.GetWebImageSize_Fast(new Uri(URL));
-                imageSize = imageSizeAlt.GetAwaiter().GetResult();
-                
-                if (imageSize.IsEmpty)
+                // use the image resolution given if set
+                if (imageResSet != null && imageResSet.Count() == 2)
                 {
-                    // attempt #2 - get image size downloading the whole file, this will be much slower
-                    imageSize = ImageUtilities.GetWebImageSize_Slow(URL);
-                }
+                    imageResW = imageResSet[0];
+                    imageResH = imageResSet[1];                    
+                } 
+                else
+                {
+                    // tries to get the image resolution from the title
+                    int[] imageRes = processResolution(title);
 
-                imageResW = imageSize.Width;
-                imageResH = imageSize.Height;
+                    imageResW = imageRes[0];
+                    imageResH = imageRes[1];
+                }
+            } 
+            else
+            {
+                if (imageResSet != null && imageResSet.Count() == 2)
+                {
+                    imageResW = imageResSet[0];
+                    imageResH = imageResSet[1];                    
+                }
+                else
+                {
+                    // tries to get the image resolution from the remote file directly    
+                    var imageSize = new System.Drawing.Size(0, 0);
+                    // attempt #1 - get image size via image file headers
+                    var imageSizeAlt = ImageUtilities.GetWebImageSize_Fast(new Uri(URL));
+                    imageSize = imageSizeAlt.GetAwaiter().GetResult();
+
+                    if (imageSize.IsEmpty)
+                    {
+                        // attempt #2 - get image size downloading the whole file, this will be much slower
+                        imageSize = ImageUtilities.GetWebImageSize_Slow(URL);
+                    }
+
+                    imageResW = imageSize.Width;
+                    imageResH = imageSize.Height;
+                }
             }
 
             if (!resolutionMaxAvailable)
@@ -948,7 +971,7 @@ namespace WallpaperBuddy
             
             if (imageResW > 0 && imageResH > 0)
             {
-                if (urlFound != "")
+                if (URL != "")
                 {
                     if (imageResW <= userResWMax && imageResH <= userResHMax && imageResW >= userResWMin && imageResH >= userResHMin)
                     {
@@ -956,7 +979,7 @@ namespace WallpaperBuddy
                         {
                             if (imageResW > imageResH)
                             {            
-                                imagesCandidates.Add(urlFound);
+                                imagesCandidates.Add(URL);
                                 return true;
                             }
                         }
@@ -964,24 +987,24 @@ namespace WallpaperBuddy
                         {
                             if (imageResH > imageResW)
                             {                             
-                                imagesCandidates.Add(urlFound);
+                                imagesCandidates.Add(URL);
                                 return true;
                             }
                         }
                         else
                         {                            
-                            imagesCandidates.Add(urlFound);
+                            imagesCandidates.Add(URL);
                             return true;
                         }
                     }
                 }
             }
-            else if (urlFound != "")
+            else if (URL != "")
             {
                 // check if the url contains an image by looking at the extension                                
-                if (validateImage(urlFound))
+                if (validateImage(URL))
                 {
-                    imagesCandidates.Add(urlFound);
+                    imagesCandidates.Add(URL);
                     return true;
                 }
 
@@ -1016,6 +1039,98 @@ namespace WallpaperBuddy
             
         }
 
+
+        public async Task processDeviantAPI()
+        {
+            string requestToken = "https://www.deviantart.com/oauth2/token?grant_type=client_credentials&client_id=%client_id%&client_secret=%client_secret%";
+            string getTagGallery = "https://www.deviantart.com/api/v1/oauth2/browse/tags?tag=%tag%&limit=%limit%&with_session=false&mature_content=true&access_token=%token%";
+            string getUserGallery = "https://www.deviantart.com/api/v1/oauth2/gallery/all?username=%deviant_artist%&limit=%limit%&with_session=false&mature_content=true&access_token=%token%";
+            string token = "";
+
+            
+
+            requestToken = requestToken.Replace("%client_id%", appIdentity.deviantArtClientId);
+            requestToken = requestToken.Replace("%client_secret%", appIdentity.deviantArtClientSecret);
+            getTagGallery = getTagGallery.Replace("%tag%", deviantTag);
+            getTagGallery = getTagGallery.Replace("%limit%", "50");
+
+            getUserGallery = getUserGallery.Replace("%deviant_artist%", deviantArtist);
+            getUserGallery = getUserGallery.Replace("%limit%", "24");
+
+
+            if (deviantArtist == "" && deviantTag == "")
+            {
+                writeLog("[ERROR]: You must specify an artist or a tag to download wallpapers from DeviantArt - see the help for more details");
+                Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
+            }
+
+            checkInternetConnection(requestToken);
+
+
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+            using (var client = new HttpClient())
+            {
+                writeLog("[INFO] Requesting DeviantArt Authorization token");
+                var response = await client.GetAsync(requestToken);
+                var responseString = response.Content.ReadAsStringAsync().Result;
+                JObject responseParsed = JObject.Parse(responseString);
+                token = responseParsed.GetValue("access_token").ToString();
+            }
+
+            if (token != "")
+            {
+                var endpoint = "";
+                var type = "";
+                if (deviantTag != null)
+                {
+                    endpoint = getTagGallery.Replace("%token%", token);
+                    type = "tag : " + deviantTag;
+                } 
+
+                if (deviantArtist != null)
+                {
+                    endpoint = getUserGallery.Replace("%token%", token);
+                    type = "artist : " + deviantArtist;
+                }
+                
+                using(var client = new HttpClient())
+                {
+
+                    writeLog("[INFO] Token received, requesting deviations for " + type);
+                    var response = await client.GetAsync(endpoint);
+                    var responseString = response.Content.ReadAsStringAsync().Result;
+
+                    JObject responseParsed = JObject.Parse(responseString);
+
+                    var result = responseParsed.GetValue("results");
+
+                    writeLog("[INFO] Found: " + result.Count() + " deviations");
+                    // go through all found and add do extraimage ? add to imagecaption?
+
+                    if (result.Count() > 0 )
+                    {
+                        for (var i = 0; i < result.Count(); i++)
+                        {
+                            string title = result[i]["title"].ToString();
+                            string resW = result[i]["content"]["width"].ToString();
+                            string resH = result[i]["content"]["height"].ToString();
+                            string url = result[i]["content"]["src"].ToString();                          
+                            if (extractImage(url, title, new[] { Int32.Parse(resW), Int32.Parse(resH) }))
+                            {                                
+                                imagesCaptions.Add(title);
+                            }
+                        }
+                    }
+                }
+            } else
+            {
+                writeLog("[ERROR]: Could not retrieve the authorization token from DeviantArt - try again later or check your internet connection");
+                Environment.Exit((int)ExitCode.EXCEPTION_ERROR);
+            }
+
+
+        }
+
         public void processDeviantXML(XmlReader reader)
         {
             // Uses MediaRSS
@@ -1028,16 +1143,13 @@ namespace WallpaperBuddy
             // SciFi Wallpaper feed - sorted by time desc
             // https://backend.deviantart.com/rss.xml?q=wallpaper+sort:time+tag:scifi
 
-            HtmlDocument doc = new HtmlDocument();
-            //reader.ReadToDescendant("item");
-
-            //XmlReader item = reader.ReadSubtree();
-
-            //item.ReadToDescendant("description");
-            //string desc = item.ReadElementContentAsString();
+            // Bruteforce extraction from artist RSS feed 
+            // does not download the full res file if available, this requires using the API
 
             if (reader.Name.ToString() == "description")
             {
+                HtmlDocument doc = new HtmlDocument();
+
                 string desc = reader.ReadString();
                 doc.LoadHtml(desc);
                 var checkImg = doc.DocumentNode.SelectNodes("//img");
@@ -1045,20 +1157,24 @@ namespace WallpaperBuddy
                 if (checkImg != null)
                 {
                     var imgSrc = checkImg.Select(p => p.GetAttributeValue("src", "not found")).ToList();
-                    if (imgSrc.Count() > 0)
+                    var imgAlt = checkImg.Select(p => p.GetAttributeValue("alt", "not found")).ToList();
+
+                    if (imgSrc.Count() > 0 && imgAlt.Count() > 0 && imgAlt[0] == "thumbnail")
                     {
                         var imgFound = imgSrc[0];
                         Uri imgUri = new Uri(imgFound);
-                        var filename = imgUri.Segments[3].Substring(0, imgUri.Segments[3].IndexOf("/"));
-                        urlFound = imgUri.Scheme + "://" + imgUri.DnsSafeHost + imgUri.Segments[0] + imgUri.Segments[1] + imgUri.Segments[2] + filename + imgUri.Query;
-                        
-                        var caption = imgUri.Segments[7].Split('.')[0];
-                        if (extractImage(urlFound, caption))
+                        if (imgUri.Segments[1] == "f/" && imgUri.Segments.Count() > 3)
                         {
-                            imagesCaptions.Add(caption);
+                            var filename = imgUri.Segments[3].Substring(0, imgUri.Segments[3].IndexOf("/"));
+                            urlFound = imgUri.Scheme + "://" + imgUri.DnsSafeHost + imgUri.Segments[0] + imgUri.Segments[1] + imgUri.Segments[2] + filename + imgUri.Query;
+
+                            var caption = imgUri.Segments[7].Split('.')[0];
+                            if (extractImage(urlFound, caption))
+                            {
+                                imagesCaptions.Add(caption);
+                            }
+
                         }
-                        
-                        //writeLog("deviant url found[" + caption + "]: " + urlFound);
                     }
 
                 }
@@ -1152,7 +1268,22 @@ namespace WallpaperBuddy
                     fileName = urlFoundUri.Segments[1];
                     break;
                 case "DEVIANTART":
-                    fileName = urlFoundUri.Segments[3];
+                    for (var i = 0; i < urlFoundUri.Segments.Count(); i++)
+                    {
+                        if (urlFoundUri.Segments[i].Contains(".jpg") || urlFoundUri.Segments[i].Contains(".gif") || urlFoundUri.Segments[i].Contains(".jpeg") || urlFoundUri.Segments[i].Contains(".png"))
+                        {                            
+                            if (urlFoundUri.Segments[i].Contains("/"))
+                            {
+                                fileName = urlFoundUri.Segments[i].Substring(0, urlFoundUri.Segments[i].IndexOf("/"));
+                            } else
+                            {
+                                fileName = urlFoundUri.Segments[i];
+                            }
+                            
+                        }
+                    }
+                     
+                        
                     break;
             }
             return fileName;
@@ -1197,32 +1328,39 @@ namespace WallpaperBuddy
                 }
             }
 
-            writeLog("Start RSS download from " + URL);
+            if (rssType == "DEVIANTART")
+            {
+                await processDeviantAPI();
+            }
+            else
+            {
+                writeLog("Start RSS download from " + URL);
 
-            // check if source is up - might be down or there may be internet connection issues
-            exceptionFlag = checkInternetConnection(URL);
+                // check if source is up - might be down or there may be internet connection issues
+                checkInternetConnection(URL);
 
-            
 
-            XmlReader reader = XmlReader.Create(URL);
+                XmlReader reader = XmlReader.Create(URL);
 
-            while (reader.Read())
-            {                
-                if (reader.IsStartElement())
+                while (reader.Read())
                 {
-                    switch(rssType)
+                    if (reader.IsStartElement())
                     {
-                        case "BING":
-                            processBingXML(reader);
-                            break;
-                        case "REDDIT":
-                            processRedditXML(reader);
-                            break;
-                        case "DEVIANTART":
-                            processDeviantXML(reader); 
-                            break;
-                    }                    
+                        switch (rssType)
+                        {
+                            case "BING":
+                                processBingXML(reader);
+                                break;
+                            case "REDDIT":
+                                processRedditXML(reader);
+                                break;
+                            //case "DEVIANTART":
+                            //    processDeviantXML(reader);
+                            //    break;
+                        }
+                    }
                 }
+
             }
 
             if (imagesCandidates.Count()>0)
@@ -1318,8 +1456,13 @@ namespace WallpaperBuddy
 
                 }
                 catch (WebException webEx)
-                {
+                {                    
                     writeLog("ERROR  [" + getExceptionLineNumber(webEx) + "]: Could not download the file " + imagesCandidates[idx] + " attempting to save it as: " + destFileName);
+                    writeLog(webEx.Message);
+                    writeLog(webEx.InnerException.Message);
+                    
+
+                    imagesCandidates.RemoveAt(idx);
                     Environment.Exit((int)ExitCode.EXCEPTION_ERROR);
                 }
 
