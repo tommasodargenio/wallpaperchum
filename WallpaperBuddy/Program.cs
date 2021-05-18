@@ -87,8 +87,6 @@ namespace WallpaperBuddy
         public const string appDescription = "Download random wallpapers from selected sources for desktop and lockscreen";
         public const string appUsage = "Usage: WallpaperBuddy [options] [-help]";
         public const string version = "1.0.0-beta.8";
-        public static readonly string deviantArtClientId = "***REMOVED***";
-        public static readonly string deviantArtClientSecret = "***REMOVED***";
 
         public const string FullVersionToString = appFullName + " v" + version + "\n" + appDescription + "\n\n" + appUsage + "\n\n";
         public const string ShortVersionToString = appFullName + " v" + version;        
@@ -140,6 +138,7 @@ namespace WallpaperBuddy
         private string _deviantArtist;
         private string _deviantTag;
         private string _deviantTopic;
+        
         #endregion
 
         #region Public Properties
@@ -564,6 +563,22 @@ namespace WallpaperBuddy
                 app.ShowHelp();
                 Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
             }
+
+            // read environment variables, this will contain the deviantArt API (or any other API) secrets
+            //            if (!DotEnv.Load(Path.Combine(Directory.GetCurrentDirectory(), "development.env")))
+            if (!DotEnv.LoadResource("development.env"))
+            {
+                writeLog("[ERROR]: Critical environment settings are missing");
+                Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
+            }
+
+            // check if deviantArt env variables have been loaded and are not empty
+            if(Environment.GetEnvironmentVariable("deviantArtClientId") == "" || Environment.GetEnvironmentVariable("deviantArtClientSecret") == "")
+            {
+                writeLog("[ERROR]: Critical environment settings are missing");
+                Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
+            }
+
             writeLog(appIdentity.FullVersionToString, true);
             writeLog("----Start Processing----", true);
             initDefaults();            
@@ -1077,10 +1092,8 @@ namespace WallpaperBuddy
             string getTopicGallery = "https://www.deviantart.com/api/v1/oauth2/browse/topic?topic=%topic%&limit=%limit%&with_session=false&mature_content=true&access_token=%token%";
             string token = "";
 
-            
-
-            requestToken = requestToken.Replace("%client_id%", appIdentity.deviantArtClientId);
-            requestToken = requestToken.Replace("%client_secret%", appIdentity.deviantArtClientSecret);
+            requestToken = requestToken.Replace("%client_id%", Environment.GetEnvironmentVariable("deviantArtClientId"));
+            requestToken = requestToken.Replace("%client_secret%", Environment.GetEnvironmentVariable("deviantArtClientSecret"));
             getTagGallery = getTagGallery.Replace("%tag%", deviantTag);
             getTagGallery = getTagGallery.Replace("%limit%", "50");
 
@@ -1330,9 +1343,6 @@ namespace WallpaperBuddy
         private async Task processRSS()
         {
             string URL = "";
-
-            // flag for exceptions
-            bool exceptionFlag;
 
             if (_rssURL != null)
             {

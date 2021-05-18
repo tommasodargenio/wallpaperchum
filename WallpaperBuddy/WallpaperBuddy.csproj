@@ -192,6 +192,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DotEnv.cs" />
     <Compile Include="ImageUtilities.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -206,6 +207,7 @@
     <Content Include="bib_icon.ico" />
     <Content Include="bib_icon_1.ico" />
     <Content Include="FodyWeavers.xml" />
+    <EmbeddedResource Include="development.env" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.5">
