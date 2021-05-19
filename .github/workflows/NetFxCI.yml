@@ -38,7 +38,17 @@ jobs:
       uses: microsoft/setup-msbuild@v1.0.1      
 
     - name: Restore NuGet packages
-      run: nuget restore WallpaperBuddy.sln      
+      run: nuget restore WallpaperBuddy.sln    
+      # create .env file with the secrets
+    - name: Attach Environment Variables
+      uses: iamsauravsharma/create-dotenv@v1.0.0
+      with:      
+        env-prefix: 'ENV_KEY_'
+        file-name: 'development.env'
+        directory: './wallpaperbuddy'
+      env: # env available for only this steps        
+        ENV_KEY_deviantArtClientId: ${{secrets.DEVIANT_ART_CLIENT_ID}}
+        ENV_KEY_deviantArtClientSecret: ${{secrets.DEVIANT_ART_CLIENT_SECRET}}        
     - name: Build
       #run: dotnet build --configuration Release --no-restore -o '${{env.PUBLISH_PATH}}'
       run: msbuild /t:Build /p:OutDir=${{env.PUBLISH_PATH}}\
