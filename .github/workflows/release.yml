@@ -24,7 +24,17 @@ jobs:
     - name: Add msbuild to PATH 
       uses: microsoft/setup-msbuild@v1.0.1      
     - name: Restore NuGet packages
-      run: nuget restore WallpaperBuddy.sln      
+      run: nuget restore WallpaperBuddy.sln   
+      # create .env file with the secrets
+    - name: Attach Environment Variables
+      uses: iamsauravsharma/create-dotenv@v1.0.0
+      with:      
+        env-prefix: 'ENV_KEY_'
+        file-name: 'development.env'
+        directory: './wallpaperbuddy'
+      env: # env available for only this steps        
+        ENV_KEY_deviantArtClientId: ${{secrets.DEVIANT_ART_CLIENT_ID}}
+        ENV_KEY_deviantArtClientSecret: ${{secrets.DEVIANT_ART_CLIENT_SECRET}}      
     - name: Build
       #run: dotnet build --configuration Release --no-restore -o '${{env.PUBLISH_PATH}}'
       run: msbuild /t:Build /p:OutDir=${{env.PUBLISH_PATH_WIN}}\      
@@ -45,10 +55,10 @@ jobs:
     - name: Verify download
       run: ls -al '${{env.PUBLISH_PATH_LIN}}' 
     - name: Prepare package
-      run: zip -r -j '${{env.PUBLISH_PATH_LIN}}/wallpaperbuddy-winx64-bin.zip' ${{env.PUBLISH_PATH_LIN}}
+      run: zip -r -j '${{env.PUBLISH_PATH_LIN}}/wallpaperbuddy-winx64-$($env:GITHUB_REF -replace "refs/tags/v").zip' ${{env.PUBLISH_PATH_LIN}}
     - name: Upload the Package to Release
       uses: skx/github-action-publish-binaries@master
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}            
       with:
-        args: '${{env.PUBLISH_PATH_LIN}}/wallpaperbuddy-winx64-bin.zip'
+        args: '${{env.PUBLISH_PATH_LIN}}/wallpaperbuddy-winx64-$($env:GITHUB_REF -replace "refs/tags/v").zip'
