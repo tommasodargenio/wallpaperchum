@@ -2,7 +2,7 @@
 
 First off thanks for taking the time considering to contribute to the code, I welcome all contribution and being a solo developer and this a little project I haven't set any hard requirements or guidelines for pull requests. However I'd appreciate if you could follow the directions set below:
 
-- clone the repository locally on your computer
+- fork and then clone the repository locally on your computer
 - I use the development branch for all in-progress coding, and merge into master eventually - so please checkout this branch
 - make sure to always pull latest changes
 - create a new branch
