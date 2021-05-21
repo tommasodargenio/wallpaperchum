@@ -880,7 +880,15 @@ namespace WallpaperBuddy
             {  
                 StorageFile file = await StorageFile.GetFileFromPathAsync(filename);
                 writeLog("Lockscreen set to: "+file.DisplayName);
-                await LockScreen.SetImageFileAsync(file);
+                try
+                {
+                    await LockScreen.SetImageFileAsync(file);
+                } 
+                catch (Exception e)
+                {
+                    writeLog("[ERROR] (" + getExceptionLineNumber(e) + "): Error while setting the lockscreen - make sure you have writing permission to the destination folder and internet it's still connected");
+                }
+                
             }
             else
             {
@@ -1006,15 +1014,15 @@ namespace WallpaperBuddy
 
             if (!resolutionMaxAvailable)
             {
-                userResHMax = imageResH;
-                userResWMax = imageResW;
+                _userResHMax = imageResH;
+                _userResWMax = imageResW;
             }
             
             if (imageResW > 0 && imageResH > 0)
             {
                 if (URL != "")
                 {
-                    if (imageResW <= userResWMax && imageResH <= userResHMax && imageResW >= userResWMin && imageResH >= userResHMin)
+                    if (imageResW <= _userResWMax && imageResH <= _userResHMax && imageResW >= _userResWMin && imageResH >= _userResHMin)
                     {
                         if (aspect == "landscape")
                         {
@@ -1443,10 +1451,12 @@ namespace WallpaperBuddy
                     if (setLockscreen && saveFolder == null)
                     {
                         destPath = Path.GetTempPath();
+                        destPath = destPath.Remove(destPath.Length - 1);
                     } 
                     else if (setWallpaper && saveFolder == null)
                     {
                         destPath = Path.GetTempPath();
+                        destPath = destPath.Remove(destPath.Length - 1);
                     }
                     else if (saveFolder != null)
                     {
