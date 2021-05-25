@@ -31,10 +31,16 @@ Feature requests will be assessed based on the project's roadmap and mission sta
 
 ## Contribution
 
-Please refer to the [contributing](docs/CONTRIBUTING.md) guidelines
+This project was initially created in 2014 with .NET framework, it had a very small scope the code wasn't implemented exactly using best practices, it was never intended to be public. As such all contribution should take this into consideration.
+
+Now that I've opened the source and published the app, I'm in the process of porting the whole codebase into .NET Core, so I can modernize and clean the code and finally use best practices.
+
+If you still want to contribute I suggest you work on the current development branch which still uses .NET Framework, I'll port all code into .NET Core eventually.
+
+Please refer to the [contributing](docs/CONTRIBUTING.md) guidelines for further information.
 
 ## Usage
-Open a command shell and type wallpaperbubby without parameters to show the help
+Open a command shell and type wallpaperbubby without parameters to show the help. For more information please refer to the [wiki](https://github.com/tommasodargenio/wallpaperbuddy/wiki)
 
 ### Examples 
 
@@ -52,9 +58,9 @@ Download the daily image from Bing (`-F B`), save it to a folder on the desktop 
 
 This work has been inspired, painstakingly tested, and refined by my brother. Thanks for all you support and ideas!
 
-I owe a great deal to my partner who supported me throughout the development of this and other crazy ideas, and who helped me overcome the fear of publishing and releasing this work to the public.
+I owe a great deal to my partner Aisling who supported me throughout the development of this and other crazy ideas, and who helped me overcome the fear of publishing and releasing this work to the public.
 
-To my dear auntie who always encouraged me and nurtured my brain, and always saluted me with: Ad maiora! (to greater things).
+To my dear and quirky auntie who always encouraged me and nurtured my brain, she always used to say goodbye differently: Ad maiora! (to greater things).
 
 
 # Disclaimers and Copyrights notice
