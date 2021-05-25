@@ -95,6 +95,16 @@ namespace WallpaperBuddy
         UNKNOWN_ERROR = 200
     }
 
+    internal enum LogType : int
+    {
+        INFO = 0,
+        WARNING = 1,
+        ERROR = 2,
+        CRITICAL = 3,
+        NOTYPE = 4,
+        IMPORTANT = 5
+    }
+
     static class appIdentity
     {
         public const string appFullName = "Wallpaper Buddy";
@@ -104,7 +114,7 @@ namespace WallpaperBuddy
         public const string version = "1.0.0-beta.8";
 
         public const string FullVersionToString = appFullName + " v" + version + "\n" + appDescription + "\n\n" + appUsage + "\n\n";
-        public const string DefaultAppIdentiy = appFullName + " v" + version + "\n" + appDescription;
+        public const string DefaultAppIdentity = appFullName + " v" + version + "\n" + appDescription;
         public const string ShortVersionToString = appFullName + " v" + version;        
 
         
@@ -120,7 +130,7 @@ namespace WallpaperBuddy
   (3):                                  The lockscreen feature will prevent you from changing the settings manually in Windows, 
                                         use the option -LF to unlock and reset the Windows settings
 ")]
-    [VersionOption(appIdentity.DefaultAppIdentiy)]
+    [VersionOption(appIdentity.DefaultAppIdentity)]
     public class Program
     {
         #region Private Properties
@@ -291,7 +301,7 @@ namespace WallpaperBuddy
         {
             if (!checkValidOptions(validOptions, parameterValue))
             {
-                writeLog("ERROR: You specified a non valid renaming style  (" + parameterValue + "), valid values are: " + string.Join(",", validOptions));
+                writeLog((int)LogType.ERROR, "You specified a non valid renaming style  (" + parameterValue + "), valid values are: " + string.Join(",", validOptions));
                 Environment.Exit((int)ExitCode.WRONG_PARAMETER);
             }            
             _rename = parameterValue;
@@ -300,7 +310,7 @@ namespace WallpaperBuddy
         {
             if (!checkValidOptions(validOptions, parameterValue))
             {
-                writeLog("ERROR: You specified a non valid aspect ratio  (" + parameterValue + "), valid values are: " + string.Join(",", validOptions));
+                writeLog((int)LogType.ERROR, "You specified a non valid aspect ratio  (" + parameterValue + "), valid values are: " + string.Join(",", validOptions));
                 Environment.Exit((int)ExitCode.WRONG_PARAMETER);
             }
             _aspect = parameterValue;
@@ -334,12 +344,12 @@ namespace WallpaperBuddy
                 {
                     // create the folder
                     Directory.CreateDirectory(parameterValue);
-                    writeLog("Backup folder do not exists, creating... " + parameterValue);
+                    writeLog((int)LogType.WARNING, "Backup folder do not exists, creating... " + parameterValue);
                 }
                 else
                 {
                     // Exit with error
-                    writeLog("ERROR - The specified backup path (" + parameterValue + ") do not exists!");
+                    writeLog((int)LogType.ERROR, "The specified backup path (" + parameterValue + ") do not exists!");
                     Environment.Exit(101);
                 }
             }
@@ -358,12 +368,12 @@ namespace WallpaperBuddy
                 {
                     // create the folder
                     Directory.CreateDirectory(parameterValue);
-                    writeLog("Saving folder do not exists, creating... " + parameterValue);
+                    writeLog((int)LogType.WARNING, "Saving folder do not exists, creating... " + parameterValue);
                 }
                 else
                 {
                     // Exit with error
-                    writeLog("ERROR - The specified saving path (" + parameterValue + ") do not exists!");
+                    writeLog((int)LogType.ERROR, "The specified saving path (" + parameterValue + ") do not exists!");
                     Environment.Exit(101);
                 }
             }
@@ -377,7 +387,7 @@ namespace WallpaperBuddy
         {
             if (!checkValidOptions(validOptions, parameterValue))
             {
-                writeLog("ERROR: You specified a non valid method  (" + parameterValue + "), valid values are: " + string.Join(",", validOptions));
+                writeLog((int)LogType.ERROR, "You specified a non valid method  (" + parameterValue + "), valid values are: " + string.Join(",", validOptions));
                 Environment.Exit((int)ExitCode.WRONG_PARAMETER);
             }
 
@@ -400,20 +410,20 @@ namespace WallpaperBuddy
             if (!isImage)
             {
                 // Exit with error
-                writeLog("ERROR - The specified file (" + parameterValue + ") is not an image!");
+                writeLog((int)LogType.ERROR, "The specified file (" + parameterValue + ") is not an image!");
                 Environment.Exit(102);
             }
 
             if (!exists)
             {
                 // Exit with error
-                writeLog("ERROR - The specified file (" + parameterValue + ") doesn't exist!");
+                writeLog((int)LogType.ERROR, "The specified file (" + parameterValue + ") doesn't exist!");
                 Environment.Exit(102);
             }
 
             // set the file
             _setStaticWallpaper = parameterValue;
-            writeLog(" setting: " + _setStaticWallpaper + " as wallpaper");
+            writeLog((int)LogType.INFO, " setting: " + _setStaticWallpaper + " as wallpaper");
             setWallPaper(_setStaticWallpaper);
             Environment.Exit(0);
         }
@@ -422,12 +432,12 @@ namespace WallpaperBuddy
         {
             if (_deviantTag != null)
             {
-                writeLog("[ERROR] Deviant Tag already set (" + _deviantTag + "). You can only use one option between artist, tag or topic");
+                writeLog((int)LogType.ERROR, "Deviant Tag already set (" + _deviantTag + "). You can only use one option between artist, tag or topic");
                 Environment.Exit((int)ExitCode.WRONG_PARAMETER);
             }
             if (_deviantTopic != null)
             {
-                writeLog("[ERROR] Deviant Topic already set (" + _deviantTopic + "). You can only use one option between artist, tag or topic");
+                writeLog((int)LogType.ERROR, "Deviant Topic already set (" + _deviantTopic + "). You can only use one option between artist, tag or topic");
                 Environment.Exit((int)ExitCode.WRONG_PARAMETER);
             }
 
@@ -438,12 +448,12 @@ namespace WallpaperBuddy
         {
             if (_deviantArtist != null)
             {
-                writeLog("[ERROR] Deviant Artist already set (" + _deviantArtist + "). You can only use one option between artist, tag or topic");
+                writeLog((int)LogType.ERROR, "Deviant Artist already set (" + _deviantArtist + "). You can only use one option between artist, tag or topic");
                 Environment.Exit((int)ExitCode.WRONG_PARAMETER);
             }
             if (_deviantTopic != null)
             {
-                writeLog("[ERROR] Deviant Topic already set (" + _deviantTopic + "). You can only use one option between artist, tag or topic");
+                writeLog((int)LogType.ERROR, "Deviant Topic already set (" + _deviantTopic + "). You can only use one option between artist, tag or topic");
                 Environment.Exit((int)ExitCode.WRONG_PARAMETER);
             }
             _deviantTag = value;
@@ -452,12 +462,12 @@ namespace WallpaperBuddy
         {
             if (_deviantArtist != null)
             {
-                writeLog("[ERROR] Deviant Artist already set (" + _deviantArtist + "). You can only use one option between artist, tag or topic");
+                writeLog((int)LogType.ERROR, "Deviant Artist already set (" + _deviantArtist + "). You can only use one option between artist, tag or topic");
                 Environment.Exit((int)ExitCode.WRONG_PARAMETER);
             }
             if (_deviantTag != null)
             {
-                writeLog("[ERROR] Deviant Tag already set (" + _deviantTag + "). You can only use one option between artist, tag or topic");
+                writeLog((int)LogType.ERROR, "Deviant Tag already set (" + _deviantTag + "). You can only use one option between artist, tag or topic");
                 Environment.Exit((int)ExitCode.WRONG_PARAMETER);
             }
             _deviantTopic = value;
@@ -481,7 +491,7 @@ namespace WallpaperBuddy
             if (!isChannel) 
             {
                 // Exit with error
-                writeLog("ERROR - You must specify a channel (option -C channelname) when using Reddit or DeviantArt as source and it cannot be blank");
+                writeLog((int)LogType.ERROR, "You must specify a channel (option -C channelname) when using Reddit or DeviantArt as source and it cannot be blank");
                 Environment.Exit(102);
             }
         }
@@ -489,7 +499,7 @@ namespace WallpaperBuddy
         {
             if (!checkValidOptions(validOptions, parameterValue))
             {
-                writeLog("ERROR: You specified a non valid RSS type  (" + parameterValue + "), valid values are: " + string.Join(",", validOptions));
+                writeLog((int)LogType.ERROR, "You specified a non valid RSS type  (" + parameterValue + "), valid values are: " + string.Join(",", validOptions));
                 Environment.Exit((int)ExitCode.WRONG_PARAMETER);
             }
 
@@ -514,7 +524,7 @@ namespace WallpaperBuddy
                             else
                             {
                                 // The provided region - culture is not valid - exit with error
-                                writeLog("ERROR: The region provided is not valid!");
+                                writeLog((int)LogType.ERROR, "The BING region provided is not valid!");
                                 Environment.Exit(104);
                             }
                         }
@@ -542,7 +552,7 @@ namespace WallpaperBuddy
             else
             {
                 // Exit with error
-                writeLog("ERROR - You must specify one of the following types: [B] for Bing, [R] for Reddit, [D] for DeviantArt");
+                writeLog((int)LogType.ERROR, "You must specify one of the following types: [B] for Bing, [R] for Reddit, [D] for DeviantArt");
                 Environment.Exit((int)ExitCode.WRONG_PARAMETER);
             }
 
@@ -586,26 +596,26 @@ namespace WallpaperBuddy
             //            if (!DotEnv.Load(Path.Combine(Directory.GetCurrentDirectory(), "development.env")))
             if (!DotEnv.LoadResource("development.env"))
             {
-                writeLog("[ERROR]: Critical environment settings are missing");
+                writeLog((int)LogType.ERROR, "Critical environment settings are missing");
                 Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
             }
 
             // check if deviantArt env variables have been loaded and are not empty
             if(Environment.GetEnvironmentVariable("deviantArtClientId") == "" || Environment.GetEnvironmentVariable("deviantArtClientSecret") == "")
             {
-                writeLog("[ERROR]: Critical environment settings are missing");
+                writeLog((int)LogType.ERROR, "Critical environment settings are missing");
                 Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
             }
 
-            writeLog(appIdentity.FullVersionToString, true);
-            writeLog("----Start Processing----", true);
+            writeLog((int)LogType.NOTYPE, appIdentity.ShortVersionToString, true);
+            writeLog((int)LogType.INFO, "----Start Processing----", true);
             initDefaults();            
             await processRSS();
 
             if (_rssURL == null)
             {
                 // Exit with error
-                writeLog("ERROR - Source is missing, there is nothing else to do");
+                writeLog((int)LogType.ERROR, "Source is missing, there is nothing else to do");
                 Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
             }
 
@@ -615,7 +625,7 @@ namespace WallpaperBuddy
         {
             if (channel == null || channel == "")
             {
-                writeLog("ERROR - You must specify a channel (option -C channelname) when using Reddit or DeviantArt as source");
+                writeLog((int)LogType.ERROR, "You must specify a channel (option -C channelname) when using Reddit or DeviantArt as source");
                 Environment.Exit((int)ExitCode.WRONG_PARAMETER);
                 return false;
             } else
@@ -663,17 +673,30 @@ namespace WallpaperBuddy
         }
 
         // Output a log message to the stdout if silent option is off
-        public void writeLog(string message, bool suppressTime = false)
+        public void writeLog(int type, string message, bool suppressTime = false)
         {
+            string typeStr = "";
+
+            switch (type)
+            {
+                case (int)LogType.INFO: typeStr = "[INFO] - "; break;
+                case (int)LogType.WARNING: typeStr = "[WARNING] - "; break;
+                case (int)LogType.ERROR: typeStr = "[ERROR] - "; break;
+                case (int)LogType.CRITICAL: typeStr = "[CRITICAL] - "; break;
+                case (int)LogType.NOTYPE: typeStr = ""; break;
+                case (int)LogType.IMPORTANT: typeStr = "[IMPORTANT] - "; break;
+
+            }
+
             if (!silent)
             {
                 DateTime dt = DateTime.Now;
                 if (!suppressTime)
                 {
-                    Console.WriteLine(dt.ToString("dd-MMM-yyyy HH:mm:ss: ") + message);
+                    Console.WriteLine(dt.ToString("dd-MMM-yyyy HH:mm:ss: ") + typeStr + message);
                 } else
                 {
-                    Console.WriteLine(message);
+                    Console.WriteLine(typeStr + message);
                 }
                 
             }
@@ -692,11 +715,11 @@ namespace WallpaperBuddy
 
             if (imgCaption != "")
             {
-                writeLog("Caption found: " + imgCaption);
+                writeLog((int)LogType.INFO, "Caption found: " + imgCaption);
             }
             else
             {
-                writeLog("WARNING - Caption not found, switching to standard file name");
+                writeLog((int)LogType.WARNING, "Caption not found, switching to standard file name");
                 return "";
             }
 
@@ -725,11 +748,11 @@ namespace WallpaperBuddy
         {
             if (File.Exists(saveFolder + Path.DirectorySeparatorChar + "Thumbs.db"))
             {
-                writeLog("Thumbs db found and deleted");
+                writeLog((int)LogType.INFO, "Thumbs db found and deleted");
                 File.Delete(saveFolder + Path.DirectorySeparatorChar + "Thumbs.db");
             }
             int fCount = Directory.GetFiles(saveFolder, "*", SearchOption.TopDirectoryOnly).Length;
-            writeLog("Files found: " + fCount);
+            writeLog((int)LogType.INFO, "Files found: " + fCount);
 
             if (fCount > deleteMax)
             {
@@ -738,18 +761,18 @@ namespace WallpaperBuddy
                 {
                     try
                     {
-                        writeLog("WARNING: Too many files. Deleting " + fi.FullName);
+                        writeLog((int)LogType.WARNING, "Too many files. Deleting " + fi.FullName);
                         fi.Delete();
                     }
                     catch (IOException e)
                     {
-                        writeLog("ERROR [" + getExceptionLineNumber(e) + "]: Can't delete " + fi.FullName + " the file is currently used or locked");
+                        writeLog((int)LogType.ERROR, "(" + getExceptionLineNumber(e) + ") Can't delete " + fi.FullName + " the file is currently used or locked");
                     }
                 }
             }
             else
             {
-                writeLog("Files to keep: " + deleteMax + " - no files deleted");
+                writeLog((int)LogType.INFO, "Files to keep: " + deleteMax + " - no files deleted");
             }
         }
 
@@ -782,7 +805,7 @@ namespace WallpaperBuddy
                 // check if Rename String is empty
                 if (renameString == "" || renameString == null)
                 {
-                    writeLog("ERROR: You need to specify a renameString when using the -R " + rename + " option");
+                    writeLog((int)LogType.ERROR, "You need to specify a renameString when using the -R " + rename + " option");
                     Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
                 } 
                 // rename with string, only preserve the extension
@@ -793,7 +816,7 @@ namespace WallpaperBuddy
                 // check if Rename String is empty
                 if (renameString == "" || renameString == null)
                 {
-                    writeLog("ERROR: You need to specify a renameString when using the -R "+ rename +" option");
+                    writeLog((int)LogType.ERROR, "You need to specify a renameString when using the -R " + rename +" option");
                     Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
                 }
 
@@ -846,7 +869,7 @@ namespace WallpaperBuddy
             {
                 destFileName = Path.GetFileName(fName);
             }
-            writeLog("Image renamed from: " + fName + " to: " + destFileName);
+            writeLog((int)LogType.INFO, "Image renamed from: " + fName + " to: " + destFileName);
             return destFileName;
         }
 
@@ -854,7 +877,7 @@ namespace WallpaperBuddy
         {
             if (URL == "" || URL == null)
             {
-                writeLog("ERROR - Important parameters missing");
+                writeLog((int)LogType.ERROR, "Important parameters missing");
                 Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
             }
             bool exceptionFlag = true;
@@ -886,10 +909,9 @@ namespace WallpaperBuddy
             {
                 exceptionFlag = false;
 
-                writeLog("ERROR [" + getExceptionLineNumber(ex) + "]: There is a problem with your internet connection or " + host + " is down!");
-                writeLog(ex.Message);
+                writeLog((int)LogType.ERROR, "(" + getExceptionLineNumber(ex) + ") There is a problem with your internet connection or " + host + " is down!");                
                 // Exit with error
-                Environment.Exit(123);
+                Environment.Exit((int)ExitCode.EXCEPTION_ERROR);
             }
             return exceptionFlag;
         }
@@ -900,20 +922,20 @@ namespace WallpaperBuddy
             if (UserProfilePersonalizationSettings.IsSupported())
             {  
                 StorageFile file = await StorageFile.GetFileFromPathAsync(filename);
-                writeLog("Lockscreen set to: "+file.DisplayName);
+                writeLog((int)LogType.INFO, "Lockscreen set to: " + file.DisplayName);
                 try
                 {
                     await LockScreen.SetImageFileAsync(file);
                 } 
                 catch (Exception e)
                 {
-                    writeLog("[ERROR] (" + getExceptionLineNumber(e) + "): Error while setting the lockscreen - make sure you have writing permission to the destination folder and internet it's still connected");
+                    writeLog((int)LogType.ERROR, "(" + getExceptionLineNumber(e) + ") Error while setting the lockscreen - make sure you have writing permission to the destination folder and internet it's still connected");
                 }
                 
             }
             else
             {
-                writeLog("WARNING: Cannot set the lockscreen as the User Profile API is not supported");
+                writeLog((int)LogType.WARNING, "Cannot set the lockscreen as the User Profile API is not supported");
             }
         }
         public void setWallPaper(string filename)
@@ -1132,7 +1154,7 @@ namespace WallpaperBuddy
 
             if (deviantArtist == null && deviantTag == null && deviantTopic == null)
             {
-                writeLog("[ERROR]: You must specify an artist or a tag or a topic to download wallpapers from DeviantArt - see the help for more details");
+                writeLog((int)LogType.ERROR, "You must specify an artist or a tag or a topic to download wallpapers from DeviantArt - see the help for more details");
                 Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
             }
 
@@ -1142,7 +1164,7 @@ namespace WallpaperBuddy
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             using (var client = new HttpClient())
             {
-                writeLog("[INFO] Requesting DeviantArt Authorization token");
+                writeLog((int)LogType.INFO, "Requesting DeviantArt Authorization token");
                 var response = await client.GetAsync(requestToken);
                 var responseString = response.Content.ReadAsStringAsync().Result;
                 JObject responseParsed = JObject.Parse(responseString);
@@ -1173,7 +1195,7 @@ namespace WallpaperBuddy
                 using(var client = new HttpClient())
                 {
 
-                    writeLog("[INFO] Token received, requesting deviations for " + type);
+                    writeLog((int)LogType.INFO, "Token received, requesting deviations for " + type);
                     var response = await client.GetAsync(endpoint);
                     var responseString = response.Content.ReadAsStringAsync().Result;
 
@@ -1181,7 +1203,7 @@ namespace WallpaperBuddy
 
                     var result = responseParsed.GetValue("results");
 
-                    writeLog("[INFO] Found: " + result.Count() + " deviations");
+                    writeLog((int)LogType.INFO, "Found: " + result.Count() + " deviations");
                     
 
                     if (result.Count() > 0 )
@@ -1201,7 +1223,7 @@ namespace WallpaperBuddy
                 }
             } else
             {
-                writeLog("[ERROR]: Could not retrieve the authorization token from DeviantArt - try again later or check your internet connection");
+                writeLog((int)LogType.ERROR, "Could not retrieve the authorization token from DeviantArt - try again later or check your internet connection");
                 Environment.Exit((int)ExitCode.EXCEPTION_ERROR);
             }
 
@@ -1378,7 +1400,7 @@ namespace WallpaperBuddy
             else
             {
                 // Exit with error
-                writeLog("WARNING: Source has not been specified, there is nothing else to do");
+                writeLog((int)LogType.WARNING, "Source has not been specified, there is nothing else to do");
                 Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
             }
 
@@ -1387,7 +1409,7 @@ namespace WallpaperBuddy
                 if (channelName == "" || channelName == null)
                 {
                     // Exit with error
-                    writeLog("ERROR: You must specify a channel (option -C channelname) when using Reddit or DeviantArt as source and it cannot be blank");
+                    writeLog((int)LogType.ERROR, "You must specify a channel (option -C channelname) when using Reddit or DeviantArt as source and it cannot be blank");
                     Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
 
                 }
@@ -1397,7 +1419,7 @@ namespace WallpaperBuddy
             {
                 if (renameString == "" || renameString == null)
                 {
-                    writeLog("ERROR: You need to specify a renameString when using the -R " + rename + " option");
+                    writeLog((int)LogType.ERROR, "You need to specify a renameString when using the -R " + rename + " option");
                     Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
                 }
             }
@@ -1408,7 +1430,7 @@ namespace WallpaperBuddy
             }
             else
             {
-                writeLog("Start RSS download from " + URL);
+                writeLog((int)LogType.INFO, "Start RSS download from " + URL);
 
                 // check if source is up - might be down or there may be internet connection issues
                 checkInternetConnection(URL);
@@ -1439,7 +1461,7 @@ namespace WallpaperBuddy
 
             if (imagesCandidates.Count()>0)
             {
-                writeLog("Total candidates found: " + imagesCandidates.Count().ToString());
+                writeLog((int)LogType.INFO, "Total candidates found: " + imagesCandidates.Count().ToString());
 
                 // if argument -D # passed, check the number of files in the dest folder if more than # delete the oldest
                 if (deleteMax > 0)
@@ -1452,10 +1474,10 @@ namespace WallpaperBuddy
                 if (method == "R" || method == "Random")
                 {
                     idx = random.Next(imagesCandidates.Count);
-                    writeLog("We picked this random image: " + imagesCandidates[idx]);
+                    writeLog((int)LogType.INFO, "We picked this random image: " + imagesCandidates[idx]);
                 }  else
                 {
-                    writeLog("We picked the most recent uploaded image: " + imagesCandidates[idx]);
+                    writeLog((int)LogType.INFO, "We picked the most recent uploaded image: " + imagesCandidates[idx]);
                 }
                 
                 
@@ -1493,10 +1515,10 @@ namespace WallpaperBuddy
                     if (!File.Exists(destPath + Path.DirectorySeparatorChar + destFileName))
                     {
                         Client.DownloadFile(imagesCandidates[idx], destPath + Path.DirectorySeparatorChar + destFileName);
-                        writeLog("Image saved at: " + destPath + Path.DirectorySeparatorChar + destFileName);
+                        writeLog((int)LogType.INFO, "Image saved at: " + destPath + Path.DirectorySeparatorChar + destFileName);
                     } else
                     {
-                        writeLog("Image " + destPath + Path.DirectorySeparatorChar + destFileName + " already exists -- skipping");
+                        writeLog((int)LogType.WARNING, "Image " + destPath + Path.DirectorySeparatorChar + destFileName + " already exists -- skipping");
                     }
                     // copy the file to the backup folder if defined
                     if (backupFolder!=null)
@@ -1510,7 +1532,7 @@ namespace WallpaperBuddy
                             destBackupFileName = destFileName;
                         }
                         System.IO.File.Copy(destPath + Path.DirectorySeparatorChar + destFileName, backupFolder + Path.DirectorySeparatorChar + destBackupFileName, true);
-                        writeLog("Backup saved at: " + backupFolder + Path.DirectorySeparatorChar + destBackupFileName);
+                        writeLog((int)LogType.INFO, "Backup saved at: " + backupFolder + Path.DirectorySeparatorChar + destBackupFileName);
                     }
                     
                     
@@ -1518,13 +1540,13 @@ namespace WallpaperBuddy
                     
                     if (setWallpaper)
                     {
-                        writeLog("Setting Wallpaper: " + destPath + Path.DirectorySeparatorChar + destFileName);
+                        writeLog((int)LogType.INFO, "Setting Wallpaper: " + destPath + Path.DirectorySeparatorChar + destFileName);
                         setWallPaper(destPath + Path.DirectorySeparatorChar + destFileName);
                     }
                     
                     if (setLockscreen)
                     {
-                        writeLog("Setting Lock screen...");
+                        writeLog((int)LogType.INFO, "Setting Lock screen...");
                         await setLockScreenUWP(destPath + Path.DirectorySeparatorChar + destFileName);
                         //setLockScreenRegistry(destPath + Path.DirectorySeparatorChar + destFileName);
                     }
@@ -1533,11 +1555,7 @@ namespace WallpaperBuddy
                 }
                 catch (WebException webEx)
                 {                    
-                    writeLog("ERROR  [" + getExceptionLineNumber(webEx) + "]: Could not download the file " + imagesCandidates[idx] + " attempting to save it as: " + destFileName);
-                    writeLog(webEx.Message);
-                    writeLog(webEx.InnerException.Message);
-                    
-
+                    writeLog((int)LogType.ERROR, "(" + getExceptionLineNumber(webEx) + ") Could not download the file " + imagesCandidates[idx] + " attempting to save it as: " + destFileName);
                     imagesCandidates.RemoveAt(idx);
                     Environment.Exit((int)ExitCode.EXCEPTION_ERROR);
                 }
@@ -1545,7 +1563,7 @@ namespace WallpaperBuddy
 
             } else
             {
-                writeLog("No valid images where found in the feed or invalid feed provided");
+                writeLog((int)LogType.WARNING, "No valid images where found in the feed or invalid feed provided");
             }
 
         }     
