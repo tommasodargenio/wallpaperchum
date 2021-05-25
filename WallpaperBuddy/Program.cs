@@ -1,51 +1,69 @@
-﻿// WallpaperBuddy --- Copyright (C) 2014 Tommaso D'Argenio <dev at tommasodargenio dot com> All rights reserved
+﻿// WallpaperBuddy --- Copyright (C) 2014 Tommaso D'Argenio <tom at tommasodargenio dot com> All rights reserved
 /**
- * ***************************************************
+ ****************************************************
  * THIS CODE IS PROVIDED *AS IS* WITHOUT WARRANTY OF 
  * ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY 
  * IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR 
  * PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.  
- * ***************************************************
- * ***************************************************
- * 
- * Created by Tommaso D'Argenio
- * Contact <dev at tommasodargenio dot com>
- * http://www.tommasodargenio.com
- * 
- * License: GNU General Public License v3.0 (GNU-GPLv3)
- * Code: https://github.com/tommasodargenio/wallpaperbuddy
- * 
- * * This is a console application which downloads the daily bing background image and save it to the file system
- * It can be scheduled in the Windows Task Scheduler and run daily or as once off
- * The application has a number of parameters and options:
- *
- * -saveTo folder:           specify where to save the image files
- * -XMin resX[,xX]resY       specify the minimum resolution at which the image should be picked
- * -XMax resX[,xX]resY       specify the maximum resolution at which the image should be picked
- * -A landscape|portrait     specify which image aspect to prefer landscape or portrait
- * -SI:                      specify to perform a strong image validation (i.e. check if url has a real image encoding - slow method)
- * -Y:                       if the saving folder do not exists, create it
- * -S:                       silent mode, do not output stats/results in console
- * -L:                       set last downloaded image as lock screen (1)
- * -W:                       set last downloaded image as desktop wallpaper (1)
- * -D #:                     keep the size of the saving folder to # files - deleting the oldest
- * -region code:             download images specifics to a region (i.e.: en-US, ja-JP, etc.), if blank uses your internet option language setting (2)
- * -R:                       rename the file using different styles
- * attributes:               d   the current date and time     c     the image caption
- *                           sA  a string with alphabetic seq  sN    string with numeric sequence
- * -renameString string:     the string to use as prefix for sequential renaming - requires -R sA or -R sN
- * -help:                    shows this screen
+ ****************************************************
+ ****************************************************
+  
+  Created by Tommaso D'Argenio
+  Contact <tom at tommasodargenio dot com>
+  https://tommasodargenio.com
+  
+  License: GNU General Public License v3.0 (GNU-GPLv3)
+  Code: https://github.com/tommasodargenio/wallpaperbuddy
+  
+  This is a console application which downloads the daily bing background image and save it to the file system
+  It can be scheduled in the Windows Task Scheduler and run daily or as once off
+  The application has a number of parameters and options:
+ 
+  --version        Show version information.
+  -F               [source]:            specify the source from where to download the image
+                                        [B]ing download from Bing Daily Wallpaper
+                                        [R]eddit download from a subreddit, use -C ChannelName to specify the subreddit
+                                        [D]eviantArt download from a topic on DeviantArt.com, use -C ChannelName to specify the topic
 
- * (1):                      The image will be saved in the system's temp folder if the saveTo option is not specified
-                             note that wallpaper image shuffle and lockscreen slide show will be disabled using this option
+  -deviantArtist   artistName:          specify the name of the DeviantArt Artist to download the image from
+  -deviantTopic    topic:               specify the name of the DeviantArt Topic to download the image from
+  -deviantTag      tag:                 specify a tag to filter the DeviantArt wallpapers on
+  -C               channelName:         specify from which subreddit or deviantart topic to download the image from
+  -Y                                    if the saving folder do not exists, create it
+  -G               filename:            set the specified file as wallpaper instead of downloading from a source
+  -M               [method]:            specify the method to use for selecting the image to download
+                                        [R]andom, download a random image from the channel if more than one present - default
+                                        [L]ast, download the most recent image from the channel
+  -saveTo          folder:              specify where to save the image files
+  -backupTo        folder:              specify a backup location where to save the image files
+  -backupFilename  filename:            specify the filename to use for the image when saved in the backup folder,
+                                        if not specified it will be the same as the image saved in the saveTo Folder
+  -XMin            resX[,xX]resY        specify the minimum resolution at which the image should be picked
+  -XMax            resX[,xX]resY        specify the maximum resolution at which the image should be picked
+  -SI                                   perform a strong image validation (i.e. check if url has a real image encoding - slow method
+  -A               landscape | portrait specify which image aspect to prefer landscape or portrait
+  -S                                    silent mode, do not output stats/results in console
+  -W                                    set last downloaded image as desktop wallpaper (1)
+  -L                                    set last downloaded image as lockscreen (3)
+  -D               #:                   keep the size of the saving folder to # files - deleting the oldest
+  -region          code:                [Bing only] download images specifics to a region (i.e.: en-US, ja-JP, etc.), if blank uses your internet option language setting (2)
+  -R                                    rename the file using different styles
+                   attributes:          d the current date and time c the image caption
+                                        sA a string with alphabetic seq sN string with numeric sequence
+                                        sO string only - this will overwrite any existing file with the same name
+  -renameString    string:              the string to use as prefix for sequential renaming - requires -R sA or -R sN
+  -?|-h|--help     Show help information.
 
- * (2):                      For a list of valid region/culture please refer to http://msdn.microsoft.com/en-us/library/ee825488%28v=cs.20%29.aspx
- * 
- * (3):                      The lockscreen feature will prevent you from changing the settings manually in Windows, 
-                             use the option -LF to unlock and reset the Windows settings
+  (1):                                  The image will be saved in the system's temp folder if the saveTo option is not specified
+                                        note that wallpaper image shuffle and lockscreen slide show will be disabled using this option
 
- * * You must run the application with a user account having writing permissions on the destination folder
- * **/
+  (2):                                  For a list of valid region/culture please refer to http://msdn.microsoft.com/en-us/library/ee825488%28v=cs.20%29.aspx
+
+  (3):                                  The lockscreen feature will prevent you from changing the settings manually in Windows,
+                                        use the option -LF to unlock and reset the Windows settings
+
+  You must run the application with a user account having writing permissions on the destination folder
+***/
 using System;
 using System.Xml;
 using System.Collections.Generic;
@@ -81,11 +99,12 @@ namespace WallpaperBuddy
     {
         public const string appFullName = "Wallpaper Buddy";
         public const string appRuntimeName = "wallpaperbuddy";
-        public const string appDescription = "Download random wallpapers from selected sources for desktop and lockscreen";
+        public const string appDescription = "Download images from various sources, set them as wallpaper or lockscreen, store in folder and much more";
         public const string appUsage = "Usage: WallpaperBuddy [options] [-help]";
         public const string version = "1.0.0-beta.8";
 
         public const string FullVersionToString = appFullName + " v" + version + "\n" + appDescription + "\n\n" + appUsage + "\n\n";
+        public const string DefaultAppIdentiy = appFullName + " v" + version + "\n" + appDescription;
         public const string ShortVersionToString = appFullName + " v" + version;        
 
         
@@ -101,7 +120,7 @@ namespace WallpaperBuddy
   (3):                                  The lockscreen feature will prevent you from changing the settings manually in Windows, 
                                         use the option -LF to unlock and reset the Windows settings
 ")]
-    [VersionOption(appIdentity.FullVersionToString)]
+    [VersionOption(appIdentity.DefaultAppIdentiy)]
     public class Program
     {
         #region Private Properties
@@ -153,15 +172,15 @@ namespace WallpaperBuddy
 
 
         [Option("-F", CommandOptionType.SingleValue, Description = "[source]:\t\tspecify the source from where to download the image\n" +
-                               "\t\t\t[B]ing download from Bing Daily Wallpaper\n" +
-                               "\t\t\t[R]eddit download from a subreddit, use -C ChannelName to specify the subreddit\n" +
-                               "\t\t\t[D]eviantArt download from a topic on DeviantArt.com, use -C ChannelName to specify the topic\n")]
+                               "\t\t\t\t[B]ing download from Bing Daily Wallpaper\n" +
+                               "\t\t\t\t[R]eddit download from a subreddit, use -C ChannelName to specify the subreddit\n" +
+                               "\t\t\t\t[D]eviantArt download from a topic on DeviantArt.com, use -C ChannelName to specify the topic\n")]
         public string rssType { get { return _rssType; } set { setRSS(new string[] { "B", "R", "D" }, value); } }
 
-        [Option ("-deviantArtist", CommandOptionType.SingleValue, Description = "artistName:\t\t\tspecify the name of the DeviantArt Artist to download the image from")]
+        [Option ("-deviantArtist", CommandOptionType.SingleValue, Description = "artistName:\t\tspecify the name of the DeviantArt Artist to download the image from")]
         public string deviantArtist { get { return _deviantArtist; } set { setDeviantArtist(value); } }
 
-        [Option("-deviantTopic", CommandOptionType.SingleValue, Description = "topic:\t\t\tspecify the name of the DeviantArt Topic to download the image from")]
+        [Option("-deviantTopic", CommandOptionType.SingleValue, Description = "topic:\t\tspecify the name of the DeviantArt Topic to download the image from")]
         public string deviantTopic { get { return _deviantTopic; } set { setDeviantTopic(value); } }
 
         [Option("-deviantTag", CommandOptionType.SingleValue, Description = "tag:\t\t\tspecify a tag to filter the DeviantArt wallpapers on")]
@@ -177,8 +196,8 @@ namespace WallpaperBuddy
         public string setStaticWallpaper { get { return _setStaticWallpaper; } set { setFileAsWallpaper(value); } }
 
         [Option("-M", CommandOptionType.SingleValue, Description = "[method]:\t\tspecify the method to use for selecting the image to download\n" +
-                                                                   "\t\t\t[R]andom, download a random image from the channel if more than one present - default\n" +
-                                                                   "\t\t\t[L]ast, download the most recent image from the channel")]
+                                                                   "\t\t\t\t[R]andom, download a random image from the channel if more than one present - default\n" +
+                                                                   "\t\t\t\t[L]ast, download the most recent image from the channel")]
         public string method { get { return _method; } set { setMethod(new string[] { "R", "L" }, value); } }
 
         [Option("-saveTo", CommandOptionType.SingleValue, Description = "folder:\t\tspecify where to save the image files")]
@@ -217,10 +236,12 @@ namespace WallpaperBuddy
         [Option("-region", CommandOptionType.SingleValue, Description = "code:\t\t[Bing only] download images specifics to a region (i.e.: en-US, ja-JP, etc.), if blank uses your internet option language setting (2)")]
         public string region { get { return _region; } set { _region = value; } }
         // addParameter("-L", "-L:                       set last downloaded image as lock screen (1)", "");
-        [Option("-R", CommandOptionType.SingleValue, Description = "\t\t\trename the file using different styles\n" +
-                                                                    "attributes:\t\td   the current date and time     c     the image caption\n" +
-                                                                    "\t\t\tsA  a string with alphabetic seq  sN    string with numeric sequence\n" +
-                                                                    "\t\t\tsO  string only - this will overwrite any existing file with the same name")]
+        [Option("-R", CommandOptionType.SingleValue, Description = "style\t\trename the file using different styles\n" +
+                                                                    "\t\t\t\t[d]   the current date and time\n" +
+                                                                    "\t\t\t\t[c]   the image caption\n" +
+                                                                    "\t\t\t\t[sA]  string with alphabetic seq\n" +
+                                                                    "\t\t\t\t[sN]  string with numeric sequence\n" +
+                                                                    "\t\t\t\t[sO]  string only - this will overwrite any existing file with the same name")]
         public string rename { get { return _rename; } set { setRenameStyle(new string [] {"d","c","sA","sN","sO" }, value); } }
 
         [Option("-renameString", CommandOptionType.SingleValue, Description = "string:\t\tthe string to use as prefix for sequential renaming - requires -R sA or -R sN")]
