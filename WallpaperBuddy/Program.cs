@@ -129,6 +129,8 @@ namespace WallpaperBuddy
 
   (3):                                  The lockscreen feature will prevent you from changing the settings manually in Windows, 
                                         use the option -LF to unlock and reset the Windows settings
+
+  (4):                                  Beware that with an high number, the whole process will be slower. Recommended value to be less than 60
 ")]
     [VersionOption(appIdentity.DefaultAppIdentity)]
     public class Program
@@ -164,7 +166,8 @@ namespace WallpaperBuddy
         private string _deviantArtist;
         private string _deviantTag;
         private string _deviantTopic;
-        
+        private int _maxQtyDownload;
+
         #endregion
 
         #region Public Properties
@@ -199,6 +202,9 @@ namespace WallpaperBuddy
         [Option("-C", CommandOptionType.SingleValue, Description = "channelName:\t\tspecify from which subreddit or deviantart topic to download the image from")]
         public string channelName { get { return _channelName; } set { setChannelName(value); } }
 
+        [Option("-MAX", CommandOptionType.SingleValue, Description = "quantity:\t\tOnly download quantity number of images if available and supported (4)")]
+        public int maxQtyDownload { get { return _maxQtyDownload; } set { _maxQtyDownload = value; } }
+
         [Option("-Y", CommandOptionType.NoValue, Description = "\t\t\tif the saving folder do not exists, create it")]
         public bool createFolders { get { return _createFolders; } set { _createFolders = value; } }
 
@@ -228,7 +234,7 @@ namespace WallpaperBuddy
         [Option("-SI", CommandOptionType.NoValue, Description = "\t\t\tperform a strong image validation (i.e. check if url has a real image encoding - slow method")]
         public bool strongImageValidation { get { return _strongImageValidation; } set { _strongImageValidation = true; } }
 
-        [Option("-A", CommandOptionType.SingleValue, Description = "landscape | portrait\tspecify which image aspect to prefer landscape or portrait")]
+        [Option("-A", CommandOptionType.SingleValue, Description = "landscape | portrait\tspecify which image aspect to prefer landscape (default) or portrait")]
         public string aspect { get { return _aspect; } set { setAspect(new string[] { "landscape", "portrait" }, value); } }
 
         [Option("-S", CommandOptionType.NoValue, Description = "\t\t\tsilent mode, do not output stats/results in console")]
@@ -1060,6 +1066,12 @@ namespace WallpaperBuddy
                 _userResHMax = imageResH;
                 _userResWMax = imageResW;
             }
+
+            if(!resolutionMinAvailable)
+            {
+                _userResHMin = imageResH;
+                _userResWMin = imageResW;
+            }
             
             if (imageResW > 0 && imageResH > 0)
             {
@@ -1070,7 +1082,7 @@ namespace WallpaperBuddy
                         if (aspect == "landscape")
                         {
                             if (imageResW > imageResH)
-                            {            
+                            {
                                 imagesCandidates.Add(URL);
                                 return true;
                             }
@@ -1078,13 +1090,13 @@ namespace WallpaperBuddy
                         else if (aspect == "portrait")
                         {
                             if (imageResH > imageResW)
-                            {                             
+                            {
                                 imagesCandidates.Add(URL);
                                 return true;
                             }
                         }
                         else
-                        {                            
+                        {
                             imagesCandidates.Add(URL);
                             return true;
                         }
@@ -1237,11 +1249,15 @@ namespace WallpaperBuddy
          */
         public async Task processRedditJSON()
         {
-            var parameters = "";
+            var limit = "";
+            if (maxQtyDownload > 25)
+            {
+                limit = "?limit=" + maxQtyDownload;
+            }
             using (var client = new HttpClient())
             {
                 // try to download the json file containing the channelName subreddit posts
-                var response = await client.GetAsync("https://www.reddit.com/r/" + channelName + ".json" + parameters);
+                var response = await client.GetAsync("https://www.reddit.com/r/" + channelName + ".json" + limit);
                 var responseString = response.Content.ReadAsStringAsync().Result;
 
                 JObject responseParsed = JObject.Parse(responseString);
