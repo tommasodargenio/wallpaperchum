@@ -18,7 +18,7 @@ First off, thanks for taking the time considering to contribute to the code. I w
 I'll review and if possible will approve and merge your code (I may ask you to do changes and push more commits to the same pull request). 
 
 ## IMPORTANT ##
-Some methods (like processDeviantAPI) require the use of client ID and client secrets to access 3rd party API. The ID and Secret are not included in the public repository for obvious security reasons, but attached as environment variables during the build process directly via GitHub CI pipeline (i.e. Actions). If you want to test this specific method you need to request your own ClientId and ClientSecret, create a file called development.env in the project main folder (add it to your .gitignore so it doesn't get pushed in your commits), add the the file the required parameters as follow:
+Some methods (like processDeviantAPI) require the use of client ID and client secrets to access 3rd party API. The ID and Secret are not included in the public repository for obvious security reasons, but attached as environment variables during the build process directly via GitHub CI pipeline (i.e. Actions). If you want to test this specific method you need to request your own ClientId and ClientSecret, create a file called development.env in the project main folder (add it to your .gitignore so it doesn't get pushed in your commits), add the file the required parameters as follow:
 
 ### DeviantArt ###
 ```
