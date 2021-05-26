@@ -1230,6 +1230,69 @@ namespace WallpaperBuddy
 
         }
 
+        /**
+         * Get images from Reddit via JSON endpoint
+         * if any valid image is found, it is added to the imagesCandidates array
+         * 
+         */
+        public async Task processRedditJSON()
+        {
+            var parameters = "";
+            using (var client = new HttpClient())
+            {
+                // try to download the json file containing the channelName subreddit posts
+                var response = await client.GetAsync("https://www.reddit.com/r/" + channelName + ".json" + parameters);
+                var responseString = response.Content.ReadAsStringAsync().Result;
+
+                JObject responseParsed = JObject.Parse(responseString);
+                // If the payload downloaded contains the data process it
+                if (responseParsed.ContainsKey("data"))
+                {
+                    var result = responseParsed.GetValue("data");
+                    writeLog((int)LogType.INFO, "Found: " + result["children"].Count() + " messages");
+                    // all posts are under the children node
+                    if (result["children"].Count() > 0 )
+                    {
+                        for (var i = 0; i < result["children"].Count(); i++)
+                        {
+                            var child = result["children"][i];
+                            // if it's a video instead of an image skip
+                            if (child["data"]["is_video"].ToObject<bool>() == false)
+                            {
+                                // a post can be without images, if there are they will be in the preview node
+                                if (child["data"].SelectToken("preview") != null)
+                                {
+                                    try
+                                    {
+                                        string title = child["data"]["title"].ToString();
+
+                                        // the source node contains information about the full resolution image of the post, all the rest are thumbnails
+                                        string resW = child["data"]["preview"]["images"][0]["source"]["width"].ToString();
+                                        string resH = child["data"]["preview"]["images"][0]["source"]["height"].ToString();
+
+                                        // the URL node will contain the direct link to the image
+                                        string url = child["data"]["url"].ToString();
+
+                                        // check if the image is a good candidate (checking image format, resolution, etc.), if so add to the imagesCandidates array
+                                        if (extractImage(url, title, new[] { Int32.Parse(resW), Int32.Parse(resH) }))
+                                        {
+                                            // add the image title, this may be used as filename as well
+                                            imagesCaptions.Add(title);
+                                        }
+                                    } 
+                                    catch (Exception e)
+                                    {
+                                        continue;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                }
+            }
+        }
+
         public void processRedditXML(XmlReader reader)
         {
             HtmlDocument doc = new HtmlDocument();
@@ -1355,6 +1418,10 @@ namespace WallpaperBuddy
             if (rssType == "DEVIANTART")
             {
                 await processDeviantAPI();
+            } 
+            else if(rssType == "REDDIT")
+            {
+                await processRedditJSON();
             }
             else
             {
@@ -1375,9 +1442,9 @@ namespace WallpaperBuddy
                             case "BING":
                                 processBingXML(reader);
                                 break;
-                            case "REDDIT":
-                                processRedditXML(reader);
-                                break;
+                            //case "REDDIT":
+                            //    processRedditXML(reader);
+                            //    break;
                             //case "DEVIANTART":
                             //    processDeviantXML(reader);
                             //    break;
