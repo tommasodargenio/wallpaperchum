@@ -20,6 +20,7 @@ The utility does not need elevated privileges (i.e. Run As Administrator) to dow
 ## Work in Progress
 - Implement configuration file (to avoid using command line parameters every time)
 - Implement GUI Frontend to easily manage/change parameters
+- Port to .NET Core (this app is very old, can really do with some cleaning up and modernization)
 
 ## Bugs and Feature Requests
 
@@ -42,7 +43,7 @@ Please refer to the [contributing](docs/CONTRIBUTING.md) guidelines for further 
 ## Usage
 Open a command shell and type wallpaperbubby without parameters to show the help. For more information please refer to the [wiki](https://github.com/tommasodargenio/wallpaperbuddy/wiki)
 
-### Examples 
+### Quick Examples 
 
 Download a random image from deviantArt (`-F D`) wallpapers (`-deviantTopic wallpapers`) topic page, save it to a folder on the desktop (`-saveTo c:\users\johndoe\desktop\wallpapers`), set is as desktop background (`-W`) and lockscreen (`-L`)
 `c:\>wallpaperbuddy.exe -W -L -F D -deviantTopic wallpapers -saveTo c:\users\johndoe\desktop\wallpapers`
