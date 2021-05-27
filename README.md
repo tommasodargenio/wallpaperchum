@@ -69,14 +69,16 @@ This application and its code is provided *as-is* without warranty of any kind, 
 
 This application depends on a number of libraries (all included in the binary releases) and their dependencies, all rights belong to their respective owners. See list below for more details
 
-[Costura.Fody](https://github.com/Fody/Costura) 5.3.0 MIT [License](https://github.com/Fody/Costura/blob/master/LICENSE)
-[Fody](https://github.com/Fody/Fody) 6.5.1 MIT [License](https://github.com/Fody/Fody/blob/master/License.txt)
-[HtmlAgilityPack](https://html-agility-pack.net/) 1.11.3 MIT [License](https://github.com/zzzprojects/html-agility-pack/blob/master/LICENSE)
-[McMaster.Extensions.CommandLineUtils](https://github.com/natemcmaster/CommandLineUtils) 3.1.0 Apache 2.0 [License](https://github.com/natemcmaster/CommandLineUtils/blob/main/LICENSE.txt)
-[Newtonsoft.Json](https://www.newtonsoft.com/json) 13.0.1 MIT [License](https://github.com/JamesNK/Newtonsoft.Json/blob/master/LICENSE.md)
-[.NET](https://dotnet.microsoft.com/) dependencies MIT [License](https://github.com/dotnet/standard/blob/master/LICENSE.TXT)
+- [Costura.Fody](https://github.com/Fody/Costura) 5.3.0 MIT [License](https://github.com/Fody/Costura/blob/master/LICENSE)
+- [Fody](https://github.com/Fody/Fody) 6.5.1 MIT [License](https://github.com/Fody/Fody/blob/master/License.txt)
+- [HtmlAgilityPack](https://html-agility-pack.net/) 1.11.3 MIT [License](https://github.com/zzzprojects/html-agility-pack/blob/master/LICENSE)
+- [McMaster.Extensions.CommandLineUtils](https://github.com/natemcmaster/CommandLineUtils) 3.1.0 Apache 2.0 [License](https://github.com/natemcmaster/CommandLineUtils/blob/main/LICENSE.txt)
+- [Newtonsoft.Json](https://www.newtonsoft.com/json) 13.0.1 MIT [License](https://github.com/JamesNK/Newtonsoft.Json/blob/master/LICENSE.md)
+- [.NET](https://dotnet.microsoft.com/) dependencies MIT [License](https://github.com/dotnet/standard/blob/master/LICENSE.TXT)
 
 
-BING is a copyright :copyright: of Microsoft Corporation, please refer to Microsoft service agreement [website](https://www.microsoft.com/en-gb/servicesagreement/) for further details
-Reddit is a copyright :copyright: of Reddit Inc., please refer to Reddit user agreement [website](https://www.redditinc.com/policies/user-agreement) for further details
-DeviantArt is a copyright :copyright: of DeviantArt Inc., please refer to DeviantArt service policy [website](https://www.deviantart.com/about/policy/service/) for further details
+**BING** is a copyright :copyright: of Microsoft Corporation, please refer to Microsoft service agreement [website](https://www.microsoft.com/en-gb/servicesagreement/) for further details
+
+**Reddit** is a copyright :copyright: of Reddit Inc., please refer to Reddit user agreement [website](https://www.redditinc.com/policies/user-agreement) for further details
+
+**DeviantArt** is a copyright :copyright: of DeviantArt Inc., please refer to DeviantArt service policy [website](https://www.deviantart.com/about/policy/service/) for further details
