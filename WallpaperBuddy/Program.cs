@@ -111,7 +111,7 @@ namespace WallpaperBuddy
         public const string appRuntimeName = "wallpaperbuddy";
         public const string appDescription = "Download images from various sources, set them as wallpaper or lockscreen, store in folder and much more";
         public const string appUsage = "Usage: WallpaperBuddy [options] [-help]";
-        public const string version = "1.0.0-beta.8";
+        public const string version = "1.0.0-beta.9";
 
         public const string FullVersionToString = appFullName + " v" + version + "\n" + appDescription + "\n\n" + appUsage + "\n\n";
         public const string DefaultAppIdentity = appFullName + " v" + version + "\n" + appDescription;
@@ -167,6 +167,9 @@ namespace WallpaperBuddy
         private string _deviantTag;
         private string _deviantTopic;
         private int _maxQtyDownload;
+        private int _downloaded;
+        private string _nextCursors;
+        private string _deviantToken;
 
         #endregion
 
@@ -294,6 +297,8 @@ namespace WallpaperBuddy
         #region Properties Setters
         public void initDefaults()
         {
+            _downloaded = 0;
+            _nextCursors = "";
             if (deleteMax == 0) { deleteMax = -1; }
             if (aspect == null) { aspect = "landscape"; }
             if (method == null) { method = "R"; }
@@ -875,7 +880,12 @@ namespace WallpaperBuddy
             {
                 destFileName = Path.GetFileName(fName);
             }
-            writeLog((int)LogType.INFO, "Image renamed from: " + fName + " to: " + destFileName);
+
+            if (fName != destFileName)
+            {
+                writeLog((int)LogType.INFO, "Image renamed from: " + fName + " to: " + destFileName);
+            }
+            
             return destFileName;
         }
 
@@ -893,7 +903,7 @@ namespace WallpaperBuddy
             HttpWebResponse response = default(HttpWebResponse);
 
             Uri domainInfo = new Uri(URL);
-            string host = domainInfo.Host;
+            string host = domainInfo.Host;            
 
             try
             {
@@ -915,7 +925,8 @@ namespace WallpaperBuddy
             {
                 exceptionFlag = false;
 
-                writeLog((int)LogType.ERROR, "(" + getExceptionLineNumber(ex) + ") There is a problem with your internet connection or " + host + " is down!");                
+                writeLog((int)LogType.ERROR, "(" + getExceptionLineNumber(ex) + ") There is a problem with your internet connection or " + host + " is down!");
+                writeLog((int)LogType.ERROR, ex.Message);
                 // Exit with error
                 Environment.Exit((int)ExitCode.EXCEPTION_ERROR);
             }
@@ -1144,13 +1155,25 @@ namespace WallpaperBuddy
         }
 
 
-        public async Task processDeviantAPI()
+        public async Task processDeviantAPI(string nextCursor = "", int totScraped = 0, string token = "")
         {
             string requestToken = "https://www.deviantart.com/oauth2/token?grant_type=client_credentials&client_id=%client_id%&client_secret=%client_secret%";
-            string getTagGallery = "https://www.deviantart.com/api/v1/oauth2/browse/tags?tag=%tag%&limit=%limit%&with_session=false&mature_content=true&access_token=%token%";
-            string getUserGallery = "https://www.deviantart.com/api/v1/oauth2/gallery/all?username=%deviant_artist%&limit=%limit%&with_session=false&mature_content=true&access_token=%token%";
-            string getTopicGallery = "https://www.deviantart.com/api/v1/oauth2/browse/topic?topic=%topic%&limit=%limit%&with_session=false&mature_content=true&access_token=%token%";
-            string token = "";
+            string getTagGallery = "https://www.deviantart.com/api/v1/oauth2/browse/tags?tag=%tag%&limit=%limit%&with_session=false&mature_content=true&access_token=%token%%next_cursor%";
+            string getUserGallery = "https://www.deviantart.com/api/v1/oauth2/gallery/all?username=%deviant_artist%&limit=%limit%&with_session=false&mature_content=true&access_token=%token%%next_cursor%";
+            string getTopicGallery = "https://www.deviantart.com/api/v1/oauth2/browse/topic?topic=%topic%&limit=%limit%&with_session=false&mature_content=true&access_token=%token%%next_cursor%";
+            HttpResponseMessage response;
+            bool firstToken = true;
+
+            if (nextCursor != "") {                
+                getTagGallery = getTagGallery.Replace("%next_cursor%", "&cursor=" + nextCursor);
+                getUserGallery = getUserGallery.Replace("%next_cursor%", "&cursor=" + nextCursor);
+                getTopicGallery = getTopicGallery.Replace("%next_cursor%", "&cursor=" + nextCursor);
+            } else
+            {
+                getTagGallery = getTagGallery.Replace("%next_cursor%", "");
+                getUserGallery = getUserGallery.Replace("%next_cursor%", "");
+                getTopicGallery = getTopicGallery.Replace("%next_cursor%", "");
+            }
 
             requestToken = requestToken.Replace("%client_id%", Environment.GetEnvironmentVariable("deviantArtClientId"));
             requestToken = requestToken.Replace("%client_secret%", Environment.GetEnvironmentVariable("deviantArtClientSecret"));
@@ -1163,6 +1186,7 @@ namespace WallpaperBuddy
             getTopicGallery = getTopicGallery.Replace("%topic%", deviantTopic);
             getTopicGallery = getTopicGallery.Replace("%limit%", "24");
 
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
             if (deviantArtist == null && deviantTag == null && deviantTopic == null)
             {
@@ -1170,20 +1194,26 @@ namespace WallpaperBuddy
                 Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
             }
 
-            checkInternetConnection(requestToken);
-
-
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-            using (var client = new HttpClient())
+            if (_deviantToken != null)
             {
-                writeLog((int)LogType.INFO, "Requesting DeviantArt Authorization token");
-                var response = await client.GetAsync(requestToken);
-                var responseString = response.Content.ReadAsStringAsync().Result;
-                JObject responseParsed = JObject.Parse(responseString);
-                token = responseParsed.GetValue("access_token").ToString();
+                token = _deviantToken;
+                firstToken = false;
+            } else
+            {
+                checkInternetConnection(requestToken);                
+                using (var client = new HttpClient())
+                {
+                    writeLog((int)LogType.INFO, "Requesting DeviantArt Authorization token");
+                    var tokenResponse = await client.GetAsync(requestToken).ConfigureAwait(false);
+                    var responseString = tokenResponse.Content.ReadAsStringAsync().Result;
+                    JObject responseParsed = JObject.Parse(responseString);
+                    token = responseParsed.GetValue("access_token").ToString();
+                    _deviantToken = token;
+                }
             }
 
-            if (token != "")
+
+            if (token != null)
             {
                 var endpoint = "";
                 var type = "";
@@ -1204,42 +1234,73 @@ namespace WallpaperBuddy
                     endpoint = getTopicGallery.Replace("%token%", token);
                     type = "topic : " + deviantTopic;
                 }
-                using(var client = new HttpClient())
+                if (firstToken)
                 {
+                    writeLog((int)LogType.INFO, "Token received, requesting deviations for " + type);                    
+                } else
+                {
+                    writeLog((int)LogType.INFO, "Token confirmed, requesting deviations for " + type);
+                }
 
-                    writeLog((int)LogType.INFO, "Token received, requesting deviations for " + type);
-                    var response = await client.GetAsync(endpoint);
+                
+                using (var client = new HttpClient())
+                {                    
+                    response = await client.GetAsync(endpoint).ConfigureAwait(false);
                     var responseString = response.Content.ReadAsStringAsync().Result;
 
                     JObject responseParsed = JObject.Parse(responseString);
+                    if (responseParsed.ContainsKey("results"))
+                    {
+                        var result = responseParsed.GetValue("results");
 
-                    var result = responseParsed.GetValue("results");
-
-                    writeLog((int)LogType.INFO, "Found: " + result.Count() + " deviations");
+                        writeLog((int)LogType.INFO, "Found: " + result.Count() + " deviations");
                     
 
-                    if (result.Count() > 0 )
-                    {
-                        for (var i = 0; i < result.Count(); i++)
+                        if (result.Count() > 0 )
                         {
-                            string title = result[i]["title"].ToString();
-                            string resW = result[i]["content"]["width"].ToString();
-                            string resH = result[i]["content"]["height"].ToString();
-                            string url = result[i]["content"]["src"].ToString();                          
-                            if (extractImage(url, title, new[] { Int32.Parse(resW), Int32.Parse(resH) }))
-                            {                                
-                                imagesCaptions.Add(title);
+                            for (var i = 0; i < result.Count(); i++)
+                            {
+                                string title = result[i]["title"].ToString();
+                                string resW = result[i]["content"]["width"].ToString();
+                                string resH = result[i]["content"]["height"].ToString();
+                                string url = result[i]["content"]["src"].ToString();                          
+                                if (extractImage(url, title, new[] { Int32.Parse(resW), Int32.Parse(resH) }))
+                                {                                
+                                    imagesCaptions.Add(title);
+                                }
                             }
                         }
+
+                        var downloaded = totScraped + result.Count();
+
+                        // If maxQtyDownload is defined, and next_cursor is available, and maxQtyDownload > result.count() + totScraped then call the method again?
+                        if (maxQtyDownload > 0 && maxQtyDownload > downloaded)
+                        {                            
+                            var deviant_next_cursor = responseParsed.GetValue("next_cursor").ToString();
+                            var has_more = responseParsed.GetValue("has_more").ToObject<bool>();
+
+                            if (deviant_next_cursor != "" && has_more)
+                            {
+                                writeLog((int)LogType.INFO, "more images are available, downloading");
+                                _downloaded = downloaded;
+                                _nextCursors = deviant_next_cursor;                                
+                            }
+                        } else
+                        {
+                            _downloaded = 0;
+                            _nextCursors = "";
+                        }
+                    } else
+                    {
+                        writeLog((int)LogType.ERROR, "Something went wrong while fetching data from DeviantArt - try again later or check your parameters");
                     }
+
                 }
             } else
             {
                 writeLog((int)LogType.ERROR, "Could not retrieve the authorization token from DeviantArt - try again later or check your internet connection");
                 Environment.Exit((int)ExitCode.EXCEPTION_ERROR);
             }
-
-
         }
 
         /**
@@ -1433,7 +1494,14 @@ namespace WallpaperBuddy
 
             if (rssType == "DEVIANTART")
             {
-                await processDeviantAPI();
+                processDeviantAPI().GetAwaiter().GetResult();
+                if (_downloaded > 0 && _nextCursors != "")
+                {                    
+                    while(_downloaded > 0)
+                    {                       
+                       processDeviantAPI(_nextCursors, _downloaded).GetAwaiter().GetResult();                       
+                    }
+                }
             } 
             else if(rssType == "REDDIT")
             {
@@ -1485,15 +1553,15 @@ namespace WallpaperBuddy
                 if (method == "R" || method == "Random")
                 {
                     idx = random.Next(imagesCandidates.Count);
-                    writeLog((int)LogType.INFO, "We picked this random image: " + imagesCandidates[idx]);
+                    writeLog((int)LogType.INFO, "We picked this random image: " + extractFileNameFromURL(imagesCandidates[idx]));
                 }  else
                 {
-                    writeLog((int)LogType.INFO, "We picked the most recent uploaded image: " + imagesCandidates[idx]);
+                    writeLog((int)LogType.INFO, "We picked the most recent uploaded image: " + extractFileNameFromURL(imagesCandidates[idx]));
                 }
-                
-                
-
                 string fName = extractFileNameFromURL(imagesCandidates[idx]);
+
+
+
 
 
                 string destFileName = processRenameFile(imagesCaptions[idx], fName);
