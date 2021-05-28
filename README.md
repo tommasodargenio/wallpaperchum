@@ -5,7 +5,7 @@
 Wallpaper Buddy it's a small Windows utility to download random images from a number of sources. It allows you to save the images, set them as desktop's wallpaper/lockscreen and much more
 
 ## What it does
-Download images from [BING](https://www.bing.com), [Reddit](https://www.reddit.com), and [DeviantArt](https://www.deviantart.com). The image is stored in a folder of your choice, so it can be used as a wallpaper or lockscreen. _please [read](#-Disclaimers-and-Copyrights-notice) disclaimer for each respective source_
+The application downloads images from [BING](https://www.bing.com), [Reddit](https://www.reddit.com), and [DeviantArt](https://www.deviantart.com). The image is stored in a folder of your choice, so it can be used as a wallpaper or lockscreen. _please [read](#-Disclaimers-and-Copyrights-notice) disclaimer for each respective source_
 
 You can set a task in the Windows Scheduler to run the app and download the image daily, this can be either stored in a folder or in the Temp folder. The image can be renamed using a number of methods.
 
@@ -41,7 +41,9 @@ If you still want to contribute I suggest you work on the current development br
 Please refer to the [contributing](docs/CONTRIBUTING.md) guidelines for further information.
 
 ## Usage
-Open a command shell and type wallpaperbubby without parameters to show the help. For more information please refer to the [wiki](https://github.com/tommasodargenio/wallpaperbuddy/wiki)
+This is a fully portable application and does not require installation, download the zip archive from the [release](https://github.com/tommasodargenio/wallpaperbuddy/releases) page, unzip in a folder and you are good to go.
+
+Open a command shell in the folder where you have unzipped the archive and type wallpaperbubby without parameters, this will show the help with the list of available parameters and options. For more information please refer to the [wiki](https://github.com/tommasodargenio/wallpaperbuddy/wiki)
 
 ### Quick Examples 
 
