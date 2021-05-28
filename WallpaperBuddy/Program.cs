@@ -136,7 +136,7 @@ namespace WallpaperBuddy
                                         use the option -LF to unlock and reset the Windows settings
 
   (4):                                  Beware that with an high number, the whole process will be slower. Recommended value to be less than 60
-")]
+    ")]
     [VersionOption(appIdentity.DefaultAppIdentity)]
     public class Program
     {
@@ -210,7 +210,7 @@ namespace WallpaperBuddy
         [Option("-C", CommandOptionType.SingleValue, Description = "channelName:\t\tspecify from which subreddit or deviantart topic to download the image from")]
         public string channelName { get { return _channelName; } set { setChannelName(value); } }
 
-        [Option("-MAX", CommandOptionType.SingleValue, Description = "quantity:\t\tOnly download quantity number of images if available and supported (4)")]
+        [Option("-downloadAtLeast", CommandOptionType.SingleValue, Description = "quantity:\t\tOnly download quantity number of images if available and supported (4)")]
         public int maxQtyDownload { get { return _maxQtyDownload; } set { _maxQtyDownload = value; } }
 
         [Option("-Y", CommandOptionType.NoValue, Description = "\t\t\tif the saving folder do not exists, create it")]
