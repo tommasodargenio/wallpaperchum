@@ -21,19 +21,20 @@
  
   --version        Show version information.
   -F               [source]:            specify the source from where to download the image
-                                        [B]ing download from Bing Daily Wallpaper
-                                        [R]eddit download from a subreddit, use -C ChannelName to specify the subreddit
-                                        [D]eviantArt download from a topic on DeviantArt.com, use -C ChannelName to specify the topic
+                                                [B]ing download from Bing Daily Wallpaper
+                                                [R]eddit download from a subreddit, use -C ChannelName to specify the subreddit
+                                                [D]eviantArt download from a topic on DeviantArt.com, use -C ChannelName to specify the topic
 
   -deviantArtist   artistName:          specify the name of the DeviantArt Artist to download the image from
   -deviantTopic    topic:               specify the name of the DeviantArt Topic to download the image from
   -deviantTag      tag:                 specify a tag to filter the DeviantArt wallpapers on
   -C               channelName:         specify from which subreddit or deviantart topic to download the image from
+  -MAX             quantity:            Only download quantity number of images if available and supported (4)
   -Y                                    if the saving folder do not exists, create it
   -G               filename:            set the specified file as wallpaper instead of downloading from a source
   -M               [method]:            specify the method to use for selecting the image to download
-                                        [R]andom, download a random image from the channel if more than one present - default
-                                        [L]ast, download the most recent image from the channel
+                                                [R]andom, download a random image from the channel if more than one present - default
+                                                [L]ast, download the most recent image from the channel
   -saveTo          folder:              specify where to save the image files
   -backupTo        folder:              specify a backup location where to save the image files
   -backupFilename  filename:            specify the filename to use for the image when saved in the backup folder,
@@ -41,16 +42,18 @@
   -XMin            resX[,xX]resY        specify the minimum resolution at which the image should be picked
   -XMax            resX[,xX]resY        specify the maximum resolution at which the image should be picked
   -SI                                   perform a strong image validation (i.e. check if url has a real image encoding - slow method
-  -A               landscape | portrait specify which image aspect to prefer landscape or portrait
+  -A               landscape | portrait specify which image aspect to prefer landscape (default) or portrait
   -S                                    silent mode, do not output stats/results in console
   -W                                    set last downloaded image as desktop wallpaper (1)
   -L                                    set last downloaded image as lockscreen (3)
   -D               #:                   keep the size of the saving folder to # files - deleting the oldest
   -region          code:                [Bing only] download images specifics to a region (i.e.: en-US, ja-JP, etc.), if blank uses your internet option language setting (2)
-  -R                                    rename the file using different styles
-                   attributes:          d the current date and time c the image caption
-                                        sA a string with alphabetic seq sN string with numeric sequence
-                                        sO string only - this will overwrite any existing file with the same name
+  -R               style                rename the file using different styles
+                                                [d] the current date and time
+                                                [c] the image caption
+                                                [sA] string with alphabetic seq
+                                                [sN] string with numeric sequence
+                                                [sO] string only - this will overwrite any existing file with the same name
   -renameString    string:              the string to use as prefix for sequential renaming - requires -R sA or -R sN
   -?|-h|--help     Show help information.
 
@@ -61,6 +64,8 @@
 
   (3):                                  The lockscreen feature will prevent you from changing the settings manually in Windows,
                                         use the option -LF to unlock and reset the Windows settings
+
+  (4):                                  Beware that with an high number, the whole process will be slower. Recommended value to be less than 60
 
   You must run the application with a user account having writing permissions on the destination folder
 ***/
@@ -1370,6 +1375,11 @@ namespace WallpaperBuddy
             }
         }
 
+        /*
+            Old method to retrieve Reddit images via RSS Feed which is in XML format
+            This is now being replaced by processRedditJSON, keeping the method here in case we
+            need to revert back
+         */
         public void processRedditXML(XmlReader reader)
         {
             HtmlDocument doc = new HtmlDocument();
@@ -1402,7 +1412,10 @@ namespace WallpaperBuddy
         }
 
         /* Breaks down the min and max resolution constraints defined in the resolution paramenter. This could be the user defined resolution from the command line or coming from the image title
-           Return an array of integer representing Width, Height*/
+           @param string resolution in the format: width x height, width * height, width X height (with or without spaces in between, enclosed or not with parenthesis)
+           @Return an array of integer representing Width, Height
+            
+         */
         public int[] processResolution(string resolution)
         {
             string regexpResolution = @"(([\d ]{2,5})[x|*|X|×|,]([\d ]{2,5}))";
@@ -1432,7 +1445,13 @@ namespace WallpaperBuddy
                     fileName =  HttpUtility.ParseQueryString(urlFoundUri.Query).Get("id");
                     break;
                 case "REDDIT":
-                    fileName = urlFoundUri.Segments[1];
+                    if (urlFoundUri.Segments.Length > 0)
+                    {
+                        fileName = urlFoundUri.Segments[1];
+                    } else
+                    {
+                        fileName = URL;
+                    }                    
                     break;
                 case "DEVIANTART":
                     for (var i = 0; i < urlFoundUri.Segments.Count(); i++)
@@ -1458,7 +1477,7 @@ namespace WallpaperBuddy
 
         private async Task processRSS()
         {
-            string URL = "";
+            string URL = "";            
 
             if (_rssURL != null)
             {
@@ -1472,17 +1491,47 @@ namespace WallpaperBuddy
                 Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
             }
 
+            // check if the user has passed the channel name when using Reddit as source type, if not exit with error
             if (rssType == "REDDIT")
             {
                 if (channelName == "" || channelName == null)
                 {
                     // Exit with error
-                    writeLog((int)LogType.ERROR, "You must specify a channel (option -C channelname) when using Reddit or DeviantArt as source and it cannot be blank");
+                    writeLog((int)LogType.ERROR, "You must specify a channel (option -C channelname) when using Reddit as source and it cannot be blank");
                     Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
 
                 }
             }
+            // if the user has requested to get the image from deviantart check if either of the deviant parameter has been passed.
+            if (rssType == "DEVIANTART")
+            {
+                bool d_artist = false;
+                bool d_topic = false;
+                bool d_tag = false;
+                if ( deviantArtist != null || deviantArtist.Length > 0)
+                {
+                    d_artist = true;                    
+                }
 
+                if (deviantTopic != null || deviantTopic.Length > 0)
+                {
+                    d_topic = true;                    
+                }
+
+                if (deviantTag != null || deviantTag.Length > 0 )
+                {
+                    d_tag = true;
+                }
+
+                if (!d_artist && !d_topic && !d_tag)
+                {
+                    // Exit with error
+                    writeLog((int)LogType.ERROR, "You must specify an artist (with -deviantArist) or a topic (with -deviantTopic) or a tag (with -deviantTag) when using DeviantArt as source and it cannot be blank");
+                    Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
+                }
+            }
+
+            // if the user has requested to rename the image file with a string then they must specify a string, if not exit with error
             if ( rename == "sA" || rename == "sO" || rename == "sN")
             {
                 if (renameString == "" || renameString == null)
@@ -1492,8 +1541,10 @@ namespace WallpaperBuddy
                 }
             }
 
+            // if the user has requested to download images from deviantArt, process the request. It is assumed at this point all required parameters have been provided
             if (rssType == "DEVIANTART")
             {
+                writeLog((int)LogType.INFO, "Start RSS download from DeviantArt");
                 processDeviantAPI().GetAwaiter().GetResult();
                 if (_downloaded > 0 && _nextCursors != "")
                 {                    
@@ -1503,13 +1554,14 @@ namespace WallpaperBuddy
                     }
                 }
             } 
-            else if(rssType == "REDDIT")
+            else if(rssType == "REDDIT") // download images from Reddit
             {
+                writeLog((int)LogType.INFO, "Start RSS download from Reddit channel " + channelName);
                 await processRedditJSON();
             }
-            else
+            else // download image from BING
             {
-                writeLog((int)LogType.INFO, "Start RSS download from " + URL);
+                writeLog((int)LogType.INFO, "Start RSS download from BING");
 
                 // check if source is up - might be down or there may be internet connection issues
                 checkInternetConnection(URL);
@@ -1521,23 +1573,28 @@ namespace WallpaperBuddy
                 {
                     if (reader.IsStartElement())
                     {
-                        switch (rssType)
-                        {
-                            case "BING":
-                                processBingXML(reader);
-                                break;
-                            //case "REDDIT":
-                            //    processRedditXML(reader);
-                            //    break;
-                            //case "DEVIANTART":
-                            //    processDeviantXML(reader);
-                            //    break;
-                        }
+                        processBingXML(reader);
+
+                        // Old switch using the RSS/XML methods, now both Reddit and DeviantArt processing method have been replaced
+
+                        //switch (rssType)
+                        //{
+                        //    case "BING":
+                        //        processBingXML(reader);
+                        //        break;
+                        //    //case "REDDIT":
+                        //    //    processRedditXML(reader);
+                        //    //    break;
+                        //    //case "DEVIANTART":
+                        //    //    processDeviantXML(reader);
+                        //    //    break;
+                        //}
                     }
                 }
 
             }
 
+            // did we find anything based on the parameters requested
             if (imagesCandidates.Count()>0)
             {
                 writeLog((int)LogType.INFO, "Total candidates found: " + imagesCandidates.Count().ToString());
@@ -1548,6 +1605,8 @@ namespace WallpaperBuddy
                     processDeleteMaxOption();
                 }
 
+
+                // Selecting the image to be used from the pool of candidates, depending on the option chosen
                 var random = new Random();
                 int idx = 0;
                 if (method == "R" || method == "Random")
@@ -1563,13 +1622,19 @@ namespace WallpaperBuddy
 
 
 
-
+                // Rename the file if needed
                 string destFileName = processRenameFile(imagesCaptions[idx], fName);
                 string destBackupFileName = "";
+
+                // Download the image
                 WebClient Client = new WebClient();
                 try
                 {
                     var destPath = "";
+
+                    // Set the destination Path, if not provided the Windows Temp folder will be used if the user wants to set the downloaded image as lockscreen or wallpaper
+                    // otherwise the current folder -where the application is running from- will be used to store the image
+                    // Windows tempo folder is normally C:\Users\USERNAME\AppData\Local\Temp
                     if (setLockscreen && saveFolder == null)
                     {
                         destPath = Path.GetTempPath();
@@ -1589,8 +1654,11 @@ namespace WallpaperBuddy
                         destPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
                     }
 
+                    // This ensure we don't get a security excpetion error due to be using the wrong SSL protocol
                     ServicePointManager.Expect100Continue = true;
                     ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+
+                    // Download the file only if it doesn't exists already within the same path and filename
                     if (!File.Exists(destPath + Path.DirectorySeparatorChar + destFileName))
                     {
                         Client.DownloadFile(imagesCandidates[idx], destPath + Path.DirectorySeparatorChar + destFileName);
@@ -1614,31 +1682,28 @@ namespace WallpaperBuddy
                         writeLog((int)LogType.INFO, "Backup saved at: " + backupFolder + Path.DirectorySeparatorChar + destBackupFileName);
                     }
                     
-                    
-
-                    
+                    // Set the downloaded image as wallpaper                    
                     if (setWallpaper)
                     {
                         writeLog((int)LogType.INFO, "Setting Wallpaper: " + destPath + Path.DirectorySeparatorChar + destFileName);
                         setWallPaper(destPath + Path.DirectorySeparatorChar + destFileName);
                     }
-                    
+
+                    // Set the downloaded image as lockscreen
                     if (setLockscreen)
                     {
                         writeLog((int)LogType.INFO, "Setting Lock screen...");
-                        await setLockScreenUWP(destPath + Path.DirectorySeparatorChar + destFileName);
-                        //setLockScreenRegistry(destPath + Path.DirectorySeparatorChar + destFileName);
+                        await setLockScreenUWP(destPath + Path.DirectorySeparatorChar + destFileName);                    
                     }
 
 
                 }
                 catch (WebException webEx)
                 {                    
-                    writeLog((int)LogType.ERROR, "(" + getExceptionLineNumber(webEx) + ") Could not download the file " + imagesCandidates[idx] + " attempting to save it as: " + destFileName);
+                    writeLog((int)LogType.ERROR, "(" + getExceptionLineNumber(webEx) + ") Could not download the file " + extractFileNameFromURL(imagesCandidates[idx]) + " or save it as: " + destFileName);
                     imagesCandidates.RemoveAt(idx);
                     Environment.Exit((int)ExitCode.EXCEPTION_ERROR);
                 }
-
 
             } else
             {
