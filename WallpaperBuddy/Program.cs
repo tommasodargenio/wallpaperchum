@@ -1505,22 +1505,22 @@ namespace WallpaperBuddy
             // if the user has requested to get the image from deviantart check if either of the deviant parameter has been passed.
             if (rssType == "DEVIANTART")
             {
-                bool d_artist = false;
-                bool d_topic = false;
-                bool d_tag = false;
-                if ( deviantArtist != null || deviantArtist.Length > 0)
+                bool d_artist = true;
+                bool d_topic = true;
+                bool d_tag = true;
+                if ( deviantArtist == null || deviantArtist == "")
                 {
-                    d_artist = true;                    
+                    d_artist = false;                    
                 }
 
-                if (deviantTopic != null || deviantTopic.Length > 0)
+                if (deviantTopic == null || deviantTopic == "")
                 {
-                    d_topic = true;                    
+                    d_topic = false;                    
                 }
 
-                if (deviantTag != null || deviantTag.Length > 0 )
+                if (deviantTag == null || deviantTag == "")
                 {
-                    d_tag = true;
+                    d_tag = false;
                 }
 
                 if (!d_artist && !d_topic && !d_tag)
