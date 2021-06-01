@@ -127,15 +127,15 @@ namespace WallpaperBuddy
     }
 
     [Command(ExtendedHelpText = @"
-  (1):                                  The image will be saved in the system's temp folder if the saveTo option is not specified
-                                        note that wallpaper image shuffle and lockscreen slide show will be disabled using this option
+  (1):                                      The image will be saved in the system's temp folder if the saveTo option is not specified
+                                            note that wallpaper image shuffle and lockscreen slide show will be disabled using this option
 
-  (2):                                  For a list of valid region/culture please refer to http://msdn.microsoft.com/en-us/library/ee825488%28v=cs.20%29.aspx
+  (2):                                      For a list of valid region/culture please refer to http://msdn.microsoft.com/en-us/library/ee825488%28v=cs.20%29.aspx
 
-  (3):                                  The lockscreen feature will prevent you from changing the settings manually in Windows, 
-                                        use the option -LF to unlock and reset the Windows settings
+  (3):                                      The lockscreen feature will prevent you from changing the settings manually in Windows, 
+                                            use the option -LF to unlock and reset the Windows settings
 
-  (4):                                  Beware that with an high number, the whole process will be slower. Recommended value to be less than 60
+  (4):                                      Beware that with an high number, the whole process will be slower. Recommended value to be less than 60
     ")]
     [VersionOption(appIdentity.DefaultAppIdentity)]
     public class Program
@@ -193,83 +193,84 @@ namespace WallpaperBuddy
 
 
         [Option("-F", CommandOptionType.SingleValue, Description = "[source]:\t\tspecify the source from where to download the image\n" +
-                               "\t\t\t\t[B]ing download from Bing Daily Wallpaper\n" +
-                               "\t\t\t\t[R]eddit download from a subreddit, use -C ChannelName to specify the subreddit\n" +
-                               "\t\t\t\t[D]eviantArt download from a topic on DeviantArt.com, use -C ChannelName to specify the topic\n")]
+                               "\t\t\t\t\t[B]ing download from Bing Daily Wallpaper\n" +
+                               "\t\t\t\t\t[R]eddit download from a subreddit, use -C ChannelName to specify the subreddit\n" +
+                               "\t\t\t\t\t[D]eviantArt download from a topic on DeviantArt.com, use -C ChannelName to specify the topic\n")]
         public string rssType { get { return _rssType; } set { setRSS(new string[] { "B", "R", "D" }, value); } }
 
-        [Option ("-deviantArtist", CommandOptionType.SingleValue, Description = "artistName:\t\tspecify the name of the DeviantArt Artist to download the image from")]
+        [Option ("--deviant-artist", CommandOptionType.SingleValue, Description = "artistName:\t\tspecify the name of the DeviantArt Artist to download the image from")]
         public string deviantArtist { get { return _deviantArtist; } set { setDeviantArtist(value); } }
 
-        [Option("-deviantTopic", CommandOptionType.SingleValue, Description = "topic:\t\tspecify the name of the DeviantArt Topic to download the image from")]
+        [Option("--deviant-topic", CommandOptionType.SingleValue, Description = "topic:\t\t\tspecify the name of the DeviantArt Topic to download the image from")]
         public string deviantTopic { get { return _deviantTopic; } set { setDeviantTopic(value); } }
 
-        [Option("-deviantTag", CommandOptionType.SingleValue, Description = "tag:\t\t\tspecify a tag to filter the DeviantArt wallpapers on")]
+        [Option("--deviant-tag", CommandOptionType.SingleValue, Description = "tag:\t\t\tspecify a tag to filter the DeviantArt wallpapers on")]
         public string deviantTag { get { return _deviantTag; } set { setDeviantTag(value); } }
 
         [Option("-C", CommandOptionType.SingleValue, Description = "channelName:\t\tspecify from which subreddit or deviantart topic to download the image from")]
         public string channelName { get { return _channelName; } set { setChannelName(value); } }
 
-        [Option("-downloadAtLeast", CommandOptionType.SingleValue, Description = "quantity:\t\tOnly download quantity number of images if available and supported (4)")]
+        [Option("--download-at-least", CommandOptionType.SingleValue, Description = "quantity:\t\tOnly download quantity number of images if available and supported (4)")]
         public int maxQtyDownload { get { return _maxQtyDownload; } set { _maxQtyDownload = value; } }
 
-        [Option("-Y", CommandOptionType.NoValue, Description = "\t\t\tif the saving folder do not exists, create it")]
+        [Option("-Y", CommandOptionType.NoValue, Description = "\t\t\t\tif the saving folder do not exists, create it")]
         public bool createFolders { get { return _createFolders; } set { _createFolders = value; } }
 
         [Option("-G", CommandOptionType.SingleValue, Description = "filename:\t\tset the specified file as wallpaper instead of downloading from a source")]
         public string setStaticWallpaper { get { return _setStaticWallpaper; } set { setFileAsWallpaper(value); } }
 
         [Option("-M", CommandOptionType.SingleValue, Description = "[method]:\t\tspecify the method to use for selecting the image to download\n" +
-                                                                   "\t\t\t\t[R]andom, download a random image from the channel if more than one present - default\n" +
-                                                                   "\t\t\t\t[L]ast, download the most recent image from the channel")]
+                                                                   "\t\t\t\t\t[R]andom, download a random image from the channel if more than one present - default\n" +
+                                                                   "\t\t\t\t\t[L]ast, download the most recent image from the channel")]
         public string method { get { return _method; } set { setMethod(new string[] { "R", "L" }, value); } }
 
-        [Option("-saveTo", CommandOptionType.SingleValue, Description = "folder:\t\tspecify where to save the image files")]
+        [Option("--save-to", CommandOptionType.SingleValue, Description = "folder:\t\t\tspecify where to save the image files")]
         public string saveFolder { get { return _saveFolder; } set { setSaveFolder(value); } }
 
-        [Option("-backupTo", CommandOptionType.SingleValue, Description = "folder:\t\tspecify a backup location where to save the image files")]
+        [Option("--backup-to", CommandOptionType.SingleValue, Description = "folder:\t\t\tspecify a backup location where to save the image files")]
         public string backupFolder { get { return _backupFolder; } set { setBackupFolder(value); } }
 
-        [Option("-backupFilename", CommandOptionType.SingleValue, Description = "filename:\t\tspecify the filename to use for the image when saved in the backup folder,\n\t\t\tif not specified it will be the same as the image saved in the saveTo Folder")]
+        [Option("--backup-filename", CommandOptionType.SingleValue, Description = "filename:\t\tspecify the filename to use for the image when saved in the backup folder,\n\t\t\t\t(if not specified it will be the same as the image saved in the saveTo folder)")]
         public string backupFilename { get { return _backupFilename; } set { _backupFilename = value; } }
 
-        [Option("-XMin", CommandOptionType.SingleValue, Description = "resX[,xX]resY\tspecify the minimum resolution at which the image should be picked")]
+        [Option("--res-min", CommandOptionType.SingleValue, Description = "resX[,xX]resY\t\tspecify the minimum resolution at which the image should be picked")]
         public string resolutionMin { get { return _resolutionMin; } set { setXMin(value); } }
 
-        [Option("-XMax", CommandOptionType.SingleValue, Description = "resX[,xX]resY\tspecify the maximum resolution at which the image should be picked")]
+        [Option("--res-max", CommandOptionType.SingleValue, Description = "resX[,xX]resY\t\tspecify the maximum resolution at which the image should be picked")]
         public string resolutionMax { get { return _resolutionMax; } set { setXMax(value); } }
 
-        [Option("-SI", CommandOptionType.NoValue, Description = "\t\t\tperform a strong image validation (i.e. check if url has a real image encoding - slow method")]
+        [Option("-SI", CommandOptionType.NoValue, Description = "\t\t\t\tperform a strong image validation (i.e. check if url has a real image encoding - slow method")]
         public bool strongImageValidation { get { return _strongImageValidation; } set { _strongImageValidation = true; } }
 
         [Option("-A", CommandOptionType.SingleValue, Description = "landscape | portrait\tspecify which image aspect to prefer landscape (default) or portrait")]
         public string aspect { get { return _aspect; } set { setAspect(new string[] { "landscape", "portrait" }, value); } }
 
-        [Option("-S", CommandOptionType.NoValue, Description = "\t\t\tsilent mode, do not output stats/results in console")]
+        [Option("-S", CommandOptionType.NoValue, Description = "\t\t\t\tsilent mode, do not output stats/results in console")]
         public bool silent { get { return _silent; } set { _silent = value; } }
 
-        [Option("-W", CommandOptionType.NoValue, Description = "\t\t\tset last downloaded image as desktop wallpaper (1)")]
+        [Option("-W", CommandOptionType.NoValue, Description = "\t\t\t\tset last downloaded image as desktop wallpaper (1)")]
         public bool setWallpaper { get { return _setWallpaper; } set { _setWallpaper = value; } }
 
-        [Option("-L", CommandOptionType.NoValue, Description = "\t\t\tset last downloaded image as lockscreen (3)")]
+        [Option("-L", CommandOptionType.NoValue, Description = "\t\t\t\tset last downloaded image as lockscreen (3)")]
         public bool setLockscreen { get { return _setLockscreen; } set { _setLockscreen = value; } }
 
         [Option("-D", CommandOptionType.SingleValue, Description = "#:\t\t\tkeep the size of the saving folder to # files - deleting the oldest")]
         public int deleteMax { get { return _deleteMax; } set { _deleteMax = Convert.ToInt32(value); } }
 
-        [Option("-region", CommandOptionType.SingleValue, Description = "code:\t\t[Bing only] download images specifics to a region (i.e.: en-US, ja-JP, etc.), if blank uses your internet option language setting (2)")]
+        [Option("--region", CommandOptionType.SingleValue, Description = "code:\t\t\t[Bing only] download images specifics to a region (i.e.: en-US, ja-JP, etc.), if blank uses your internet option language setting (2)")]
         public string region { get { return _region; } set { _region = value; } }
         // addParameter("-L", "-L:                       set last downloaded image as lock screen (1)", "");
-        [Option("-R", CommandOptionType.SingleValue, Description = "style\t\trename the file using different styles\n" +
-                                                                    "\t\t\t\t[d]   the current date and time\n" +
-                                                                    "\t\t\t\t[c]   the image caption\n" +
-                                                                    "\t\t\t\t[sA]  string with alphabetic seq\n" +
-                                                                    "\t\t\t\t[sN]  string with numeric sequence\n" +
-                                                                    "\t\t\t\t[sO]  string only - this will overwrite any existing file with the same name")]
+        [Option("-R", CommandOptionType.SingleValue, Description = "style\t\t\trename the file using different styles\n" +
+                                                                    "\t\t\t\t\t[d]   the current date and time\n" +
+                                                                    "\t\t\t\t\t[c]   the image caption\n" +
+                                                                    "\t\t\t\t\t[sA]  string with alphabetic seq\n" +
+                                                                    "\t\t\t\t\t[sN]  string with numeric sequence\n" +
+                                                                    "\t\t\t\t\t[sO]  string only - this will overwrite any existing file with the same name")]
         public string rename { get { return _rename; } set { setRenameStyle(new string [] {"d","c","sA","sN","sO" }, value); } }
-
-        [Option("-renameString", CommandOptionType.SingleValue, Description = "string:\t\tthe string to use as prefix for sequential renaming - requires -R sA or -R sN")]
+        
+        [Option("--rename-string", CommandOptionType.SingleValue, Description = "string:\t\t\tthe string to use as prefix for sequential renaming - requires -R sA or -R sN")]
         public string renameString { get { return _renameString; } set { _renameString = value; } }
+        
 
         #region Private Internal Properties 
         private static string urlFound = "";
