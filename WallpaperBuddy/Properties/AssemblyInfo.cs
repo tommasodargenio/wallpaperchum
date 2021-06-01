@@ -7,11 +7,11 @@ using System.Resources;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("WallpaperBuddy")]
-[assembly: AssemblyDescription("Grab Bing daily background and save to file system")]
+[assembly: AssemblyDescription("Download images from various sources, set them as wallpaper or lockscreen, store in folder and much more")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Tommaso D'Argenio")]
 [assembly: AssemblyProduct("WallpaperBuddy")]
-[assembly: AssemblyCopyright("Copyright (C) 2014 Tommaso D'Argenio <pingala at gmail dot com> All rights reserved.")]
+[assembly: AssemblyCopyright("Copyright (C) 2014 Tommaso D'Argenio <tom at tommasodargenio dot com> All rights reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
