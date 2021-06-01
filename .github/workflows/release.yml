@@ -3,6 +3,7 @@ env:
   PUBLISH_PATH_WIN: '${{ github.workspace }}\publish'
   PUBLISH_PATH_LIN: '${{ github.workspace }}/publish'
   ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+  VERSION_NUMBER: '$($env:GITHUB_REF -replace "refs/tags/v")'
 on:
   release:
     types: [created]
@@ -59,7 +60,7 @@ jobs:
     - name: Verify download
       run: ls -al '${{env.PUBLISH_PATH_LIN}}' 
     - name: Verify Version Number
-      run: echo '$($env:GITHUB_REF -replace "refs/tags/v")'
+      run: echo '${{env.VERSION_NUMBER}}'
     - name: Prepare package
       run: zip -r -j '${{env.PUBLISH_PATH_LIN}}/wallpaperbuddy-winx64-$($env:GITHUB_REF -replace "refs/tags/v").zip' ${{env.PUBLISH_PATH_LIN}}
     - name: Upload the Package to Release
