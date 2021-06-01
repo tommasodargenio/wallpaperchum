@@ -51,7 +51,7 @@ jobs:
         ENV_KEY_deviantArtClientSecret: ${{secrets.DEVIANT_ART_CLIENT_SECRET}}        
     - name: Build
       #run: dotnet build --configuration Release --no-restore -o '${{env.PUBLISH_PATH}}'
-      run: msbuild /t:Build /p:OutDir=${{env.PUBLISH_PATH}}\
+      run: msbuild /t:Build /p:DebugSymbols=false /p:DebugType=None /p:OutDir=${{env.PUBLISH_PATH}}\
     - name: Upload the Build Artifact
       uses: actions/upload-artifact@v2.1.3
       with:
