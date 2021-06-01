@@ -60,9 +60,9 @@ jobs:
     - name: Verify download
       run: ls -al '${{env.PUBLISH_PATH_LIN}}' 
     - name: 'Get last release tag'
-        id: releasetag
-        uses: "WyriHaximus/github-action-get-previous-tag@v1"
-        with:
+      id: releasetag
+      uses: "WyriHaximus/github-action-get-previous-tag@v1"
+      with:
           fallback: 1.0.0 
     - name: Prepare package
       run: zip -r -j '${{env.PUBLISH_PATH_LIN}}/wallpaperbuddy-winx64-${{ steps.releasetag.outputs.tag }}.zip' ${{env.PUBLISH_PATH_LIN}}
