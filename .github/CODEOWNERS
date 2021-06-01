@@ -1,0 +1,4 @@
+# CODEOWNERS 
+/docs/ @tommasodargenio
+/.github @tommasodargenio
+*.md @tommasodargenio
