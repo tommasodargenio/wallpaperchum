@@ -1,6 +1,6 @@
 # Wallpaper Buddy
 ![CI](https://github.com/tommasodargenio/wallpaperbuddy/workflows/CI/badge.svg)
-![Build](https://github.com/tommasodargenio/wallpaperbuddy/workflows/Release/badge.svg)
+[![Build](https://github.com/tommasodargenio/wallpaperbuddy/actions/workflows/releasePipeline.yml/badge.svg?branch=1.0.0-beta.10)](https://github.com/tommasodargenio/wallpaperbuddy/actions/workflows/releasePipeline.yml)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 [Download](https://github.com/tommasodargenio/wallpaperbuddy/releases) the latest beta release if you'd like to test it out, suggestions and feedbacks are very welcome
