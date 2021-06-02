@@ -116,7 +116,7 @@ namespace WallpaperBuddy
         public const string appRuntimeName = "wallpaperbuddy";
         public const string appDescription = "Download images from various sources, set them as wallpaper or lockscreen, store in folder and much more";
         public const string appUsage = "Usage: WallpaperBuddy [options] [-help]";
-        public const string version = "1.0.0-beta.9";
+        public const string version = "1.0.0-beta.10";
 
         public const string FullVersionToString = appFullName + " v" + version + "\n" + appDescription + "\n\n" + appUsage + "\n\n";
         public const string DefaultAppIdentity = appFullName + " v" + version + "\n" + appDescription;
