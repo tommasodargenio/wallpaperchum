@@ -1,8 +1,9 @@
 # Wallpaper Buddy
-![CI](https://github.com/tommasodargenio/wallpaperbuddy/workflows/CI/badge.svg) 
-![GitHub Release](https://github.com/tommasodargenio/wallpaperbuddy/workflows/releasePipeline/badge.svg) 
-[![GitHub release](https://img.shields.io/github/release/tommasodargenio/wallpaperbuddy.svg)](https://GitHub.com/tommasodargenio/wallpaperbuddy/releases/)
+![CI](https://github.com/tommasodargenio/wallpaperbuddy/workflows/CI/badge.svg
+![Build](https://github.com/tommasodargenio/wallpaperbuddy/workflows/Release/badge.svg
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
+[Download](https://github.com/tommasodargenio/wallpaperbuddy/releases) the latest beta release if you'd like to test it out, suggestions and feedbacks are very welcome
 
 ## In a nutshell
 Wallpaper Buddy it's a small Windows utility to download random images from a number of sources. It allows you to save the images, set them as desktop's wallpaper/lockscreen and much more
