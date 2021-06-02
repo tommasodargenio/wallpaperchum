@@ -1,6 +1,6 @@
 # Wallpaper Buddy
 ![CI](https://github.com/tommasodargenio/wallpaperbuddy/workflows/CI/badge.svg) 
-![Release](https://github.com/tommasodargenio/wallpaperbuddy/workflows/releasePipeline/badge.svg) 
+![GitHub Release](https://github.com/tommasodargenio/wallpaperbuddy/workflows/releasePipeline/badge.svg) 
 [![GitHub release](https://img.shields.io/github/release/tommasodargenio/wallpaperbuddy.svg)](https://GitHub.com/tommasodargenio/wallpaperbuddy/releases/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
