@@ -647,7 +647,7 @@ namespace WallpaperBuddy
         {
             if (channel == null || channel == "")
             {
-                writeLog((int)LogType.ERROR, "You must specify a channel (option -C channelname) when using Reddit or DeviantArt as source");
+                writeLog((int)LogType.ERROR, "You must specify a channel (option -C channelname) when using Reddit");
                 Environment.Exit((int)ExitCode.WRONG_PARAMETER);
                 return false;
             } else
@@ -1559,7 +1559,7 @@ namespace WallpaperBuddy
                 if (!d_artist && !d_topic && !d_tag)
                 {
                     // Exit with error
-                    writeLog((int)LogType.ERROR, "You must specify an artist (with -deviantArist) or a topic (with -deviantTopic) or a tag (with -deviantTag) when using DeviantArt as source and it cannot be blank");
+                    writeLog((int)LogType.ERROR, "You must specify an artist (with -deviant-arist) or a topic (with -deviant-topic) or a tag (with -deviant-tag) when using DeviantArt as source and it cannot be blank");
                     Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
                 }
             }
