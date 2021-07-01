@@ -1270,16 +1270,22 @@ namespace WallpaperBuddy
                         if (result.Count() > 0 )
                         {
                             for (var i = 0; i < result.Count(); i++)
-                            {
-                                if (result[i]["is_mature"].ToObject<bool>() == false || allowNSFW)
+                            {   
+                                if (result[i]["is_mature"].ToObject<bool>() == false || allowNSFW && result[i].SelectToken("content") != null)
                                 {
-                                    string title = result[i]["title"].ToString();
-                                    string resW = result[i]["content"]["width"].ToString();
-                                    string resH = result[i]["content"]["height"].ToString();
-                                    string url = result[i]["content"]["src"].ToString();
-                                    if (extractImage(url, title, new[] { Int32.Parse(resW), Int32.Parse(resH) }))
+                                    try
                                     {
-                                        imagesCaptions.Add(title);
+                                        string title = result[i]["title"].ToString();
+                                        string resW = result[i]["content"]["width"].ToString();
+                                        string resH = result[i]["content"]["height"].ToString();
+                                        string url = result[i]["content"]["src"].ToString();
+                                        if (extractImage(url, title, new[] { Int32.Parse(resW), Int32.Parse(resH) }))
+                                        {
+                                            imagesCaptions.Add(title);
+                                        }
+                                    } catch (Exception e)
+                                    {
+                                        continue;
                                     }
                                 }
                             }
