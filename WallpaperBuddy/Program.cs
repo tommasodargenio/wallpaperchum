@@ -175,6 +175,7 @@ namespace WallpaperBuddy
         private int _downloaded;
         private string _nextCursors;
         private string _deviantToken;
+        private bool _allowNSFW;
 
         #endregion
 
@@ -206,6 +207,10 @@ namespace WallpaperBuddy
 
         [Option("--deviant-tag", CommandOptionType.SingleValue, Description = "tag:\t\t\tspecify a tag to filter the DeviantArt wallpapers on")]
         public string deviantTag { get { return _deviantTag; } set { setDeviantTag(value); } }
+
+        [Option("--allow-nsfw", CommandOptionType.NoValue, Description = "\t\t\t\tallow to download images flagged NSFW (i.e.: adult content), by default they are not selected\n\t\t\t\tthis only applies if the source is Reddit")]
+        public bool allowNSFW { get { return _allowNSFW; } set { _allowNSFW = value; } }
+
 
         [Option("-C", CommandOptionType.SingleValue, Description = "channelName:\t\tspecify from which subreddit or deviantart topic to download the image from")]
         public string channelName { get { return _channelName; } set { setChannelName(value); } }
@@ -304,7 +309,7 @@ namespace WallpaperBuddy
         public void initDefaults()
         {
             _downloaded = 0;
-            _nextCursors = "";
+            _nextCursors = "";            
             if (deleteMax == 0) { deleteMax = -1; }
             if (aspect == null) { aspect = "landscape"; }
             if (method == null) { method = "R"; }
@@ -1354,7 +1359,7 @@ namespace WallpaperBuddy
                             // if it's a video (is_video) or a gallery (is_gallery) or the media node is not empty (still a video even if is_video flag is false) instead of an image skip
                             try
                             {
-                                if (child["data"]["is_video"].ToObject<bool>() == false && test_media == false && test_is_gallery == null)
+                                if (child["data"]["is_video"].ToObject<bool>() == false && test_media == false && test_is_gallery == null && child["data"]["over_18"].ToObject<bool>() == allowNSFW)
                                 {
                                     // a post can be without images, if there are they will be in the preview node
                                     if (child["data"].SelectToken("preview") != null)
