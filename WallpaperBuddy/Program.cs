@@ -208,7 +208,7 @@ namespace WallpaperBuddy
         [Option("--deviant-tag", CommandOptionType.SingleValue, Description = "tag:\t\t\tspecify a tag to filter the DeviantArt wallpapers on")]
         public string deviantTag { get { return _deviantTag; } set { setDeviantTag(value); } }
 
-        [Option("--allow-nsfw", CommandOptionType.NoValue, Description = "\t\t\t\tallow to download images flagged NSFW (i.e.: adult content), by default they are not selected\n\t\t\t\tthis only applies if the source is Reddit")]
+        [Option("--allow-nsfw", CommandOptionType.NoValue, Description = "\t\t\t\tallow to download images flagged NSFW (i.e.: adult content), by default they are not selected")]
         public bool allowNSFW { get { return _allowNSFW; } set { _allowNSFW = value; } }
 
 
@@ -1271,13 +1271,16 @@ namespace WallpaperBuddy
                         {
                             for (var i = 0; i < result.Count(); i++)
                             {
-                                string title = result[i]["title"].ToString();
-                                string resW = result[i]["content"]["width"].ToString();
-                                string resH = result[i]["content"]["height"].ToString();
-                                string url = result[i]["content"]["src"].ToString();                          
-                                if (extractImage(url, title, new[] { Int32.Parse(resW), Int32.Parse(resH) }))
-                                {                                
-                                    imagesCaptions.Add(title);
+                                if (result[i]["is_mature"].ToObject<bool>() == false || allowNSFW)
+                                {
+                                    string title = result[i]["title"].ToString();
+                                    string resW = result[i]["content"]["width"].ToString();
+                                    string resH = result[i]["content"]["height"].ToString();
+                                    string url = result[i]["content"]["src"].ToString();
+                                    if (extractImage(url, title, new[] { Int32.Parse(resW), Int32.Parse(resH) }))
+                                    {
+                                        imagesCaptions.Add(title);
+                                    }
                                 }
                             }
                         }
@@ -1359,7 +1362,13 @@ namespace WallpaperBuddy
                             // if it's a video (is_video) or a gallery (is_gallery) or the media node is not empty (still a video even if is_video flag is false) instead of an image skip
                             try
                             {
-                                if (child["data"]["is_video"].ToObject<bool>() == false && test_media == false && test_is_gallery == null && child["data"]["over_18"].ToObject<bool>() == allowNSFW)
+                                if (child["data"]["is_video"].ToObject<bool>() == false && 
+                                    test_media == false && 
+                                    test_is_gallery == null && 
+                                    (
+                                        child["data"]["over_18"].ToObject<bool>() == false || 
+                                        (allowNSFW) 
+                                    ))
                                 {
                                     // a post can be without images, if there are they will be in the preview node
                                     if (child["data"].SelectToken("preview") != null)
