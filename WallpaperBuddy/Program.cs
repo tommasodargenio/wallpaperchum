@@ -1334,7 +1334,6 @@ namespace WallpaperBuddy
                     Environment.Exit((int)ExitCode.EXCEPTION_ERROR);
                 }
 
-
                 var responseString = response.Content.ReadAsStringAsync().Result;
 
                 JObject responseParsed = JObject.Parse(responseString);
@@ -1344,40 +1343,50 @@ namespace WallpaperBuddy
                     var result = responseParsed.GetValue("data");
                     writeLog((int)LogType.INFO, "Found: " + result["children"].Count() + " messages");
                     // all posts are under the children node
-                    if (result["children"].Count() > 0 )
+                    if (result["children"].Count() > 0)
                     {
                         for (var i = 0; i < result["children"].Count(); i++)
                         {
                             var child = result["children"][i];
-                            // if it's a video instead of an image skip
-                            if (child["data"]["is_video"].ToObject<bool>() == false)
+                            var test_is_gallery = child["data"].SelectToken("is_gallery");
+                            var test_media = child["data"]["media"].HasValues;
+
+                            // if it's a video (is_video) or a gallery (is_gallery) or the media node is not empty (still a video even if is_video flag is false) instead of an image skip
+                            try
                             {
-                                // a post can be without images, if there are they will be in the preview node
-                                if (child["data"].SelectToken("preview") != null)
+                                if (child["data"]["is_video"].ToObject<bool>() == false && test_media == false && test_is_gallery == null)
                                 {
-                                    try
+                                    // a post can be without images, if there are they will be in the preview node
+                                    if (child["data"].SelectToken("preview") != null)
                                     {
-                                        string title = child["data"]["title"].ToString();
-
-                                        // the source node contains information about the full resolution image of the post, all the rest are thumbnails
-                                        string resW = child["data"]["preview"]["images"][0]["source"]["width"].ToString();
-                                        string resH = child["data"]["preview"]["images"][0]["source"]["height"].ToString();
-
-                                        // the URL node will contain the direct link to the image
-                                        string url = child["data"]["url"].ToString();
-
-                                        // check if the image is a good candidate (checking image format, resolution, etc.), if so add to the imagesCandidates array
-                                        if (extractImage(url, title, new[] { Int32.Parse(resW), Int32.Parse(resH) }))
+                                        try
                                         {
-                                            // add the image title, this may be used as filename as well
-                                            imagesCaptions.Add(title);
+                                            string title = child["data"]["title"].ToString();
+
+                                            // the source node contains information about the full resolution image of the post, all the rest are thumbnails
+                                            string resW = child["data"]["preview"]["images"][0]["source"]["width"].ToString();
+                                            string resH = child["data"]["preview"]["images"][0]["source"]["height"].ToString();
+
+                                            // the URL node will contain the direct link to the image
+                                            string url = child["data"]["url"].ToString();
+
+                                            // check if the image is a good candidate (checking image format, resolution, etc.), if so add to the imagesCandidates array
+                                            if (extractImage(url, title, new[] { Int32.Parse(resW), Int32.Parse(resH) }))
+                                            {
+                                                // add the image title, this may be used as filename as well
+                                                imagesCaptions.Add(title);
+                                            }
                                         }
-                                    } 
-                                    catch (Exception e)
-                                    {
-                                        continue;
+                                        catch (Exception e)
+                                        {
+                                            continue;
+                                        }
                                     }
                                 }
+                            }
+                            catch (Exception e)
+                            {
+                                continue;
                             }
                         }
                     }
@@ -1385,7 +1394,6 @@ namespace WallpaperBuddy
                 }
             }
         }
-
         /*
             Old method to retrieve Reddit images via RSS Feed which is in XML format
             This is now being replaced by processRedditJSON, keeping the method here in case we
