@@ -1324,7 +1324,17 @@ namespace WallpaperBuddy
             using (var client = new HttpClient())
             {
                 // try to download the json file containing the channelName subreddit posts
-                var response = await client.GetAsync("https://www.reddit.com/r/" + channelName + ".json" + limit);
+                var redditUrl = "https://www.reddit.com/r/" + channelName + "/new.json" + limit;
+                var response = await client.GetAsync(redditUrl);
+
+                // check if url requested originally and response.requestUri matches, if not probably the reddit channel doesn't exists
+                if (redditUrl != response.RequestMessage.RequestUri.ToString())
+                {
+                    writeLog((int)LogType.ERROR, "The Reddit Channel you have requested [" + channelName + "] doesn't exists!");
+                    Environment.Exit((int)ExitCode.EXCEPTION_ERROR);
+                }
+
+
                 var responseString = response.Content.ReadAsStringAsync().Result;
 
                 JObject responseParsed = JObject.Parse(responseString);
