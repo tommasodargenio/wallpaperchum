@@ -152,16 +152,13 @@ namespace WallpaperChum
         private string _rename;
         private string _renameString;
         private bool _setLockscreen;
-        private bool _setWallpaper;        
-        private string _getLocalFile;
+        private bool _setWallpaper;                
         private string _resolutionMin;
         private string _resolutionMax;
         private bool _createFolders;
         private bool _strongImageValidation;
         private string _aspect;
-        private string _rssURL;
-        private bool _resolutionMaxAvailable;
-        private bool _resolutionMinAvailable;
+        private string _rssURL;                
         private int _userResWMin;
         private int _userResHMin;
         private int _userResWMax;
@@ -342,8 +339,7 @@ namespace WallpaperChum
 
         public void setXMin(string parameterValue)
         {
-            _resolutionMin = parameterValue; 
-            _resolutionMinAvailable = true;
+            _resolutionMin = parameterValue;             
             int[] userRes = processResolution(_resolutionMin);
 
             _userResWMin = userRes[0];
@@ -351,8 +347,7 @@ namespace WallpaperChum
         }
         public void setXMax(string parameterValue)
         {
-            _resolutionMax = parameterValue; 
-            _resolutionMaxAvailable = true;
+            _resolutionMax = parameterValue;             
             int[] userRes = processResolution(_resolutionMax);
             _userResWMax = userRes[0];
             _userResHMax = userRes[1];
@@ -912,8 +907,8 @@ namespace WallpaperChum
             bool exceptionFlag = true;
 
             // variables used to check internet connection
-            HttpWebRequest request = default(HttpWebRequest);
-            HttpWebResponse response = default(HttpWebResponse);
+            HttpWebRequest request = default;
+            HttpWebResponse response = default;
 
             Uri domainInfo = new Uri(URL);
             string host = domainInfo.Host;            
@@ -1285,7 +1280,7 @@ namespace WallpaperChum
                                         {
                                             imagesCaptions.Add(title);
                                         }
-                                    } catch (Exception e)
+                                    } catch 
                                     {
                                         continue;
                                     }
@@ -1399,14 +1394,14 @@ namespace WallpaperChum
                                                 imagesCaptions.Add(title);
                                             }
                                         }
-                                        catch (Exception e)
+                                        catch 
                                         {
                                             continue;
                                         }
                                     }
                                 }
                             }
-                            catch (Exception e)
+                            catch
                             {
                                 continue;
                             }
