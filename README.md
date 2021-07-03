@@ -1,7 +1,7 @@
 # Wallpaper Chum
 ![CI](https://github.com/tommasodargenio/wallpaperchum/workflows/CI/badge.svg) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-Also available on [![Download wallpaperchum](https://sourceforge.net/sflogo.php?type=13&group_id=3388809)](https://sourceforge.net/p/wallpaperchum/)
+Also available on [![Download wallpaperchum](https://sourceforge.net/sflogo.php?type=11&group_id=3388809)](https://sourceforge.net/p/wallpaperchum/)
 
 ## In a nutshell
 Wallpaper Chum it's a small Windows utility to download random images from a number of sources. It allows you to save the images, set them as desktop's wallpaper/lockscreen and much more
