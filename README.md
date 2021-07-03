@@ -1,8 +1,10 @@
-# Wallpaper Buddy
-![CI](https://github.com/tommasodargenio/wallpaperbuddy/workflows/CI/badge.svg) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+# Wallpaper Chum
+![CI](https://github.com/tommasodargenio/wallpaperchum/workflows/CI/badge.svg) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
+Also available on [![Download wallpaperchum](https://sourceforge.net/sflogo.php?type=13&group_id=3388809)](https://sourceforge.net/p/wallpaperchum/)
 
 ## In a nutshell
-Wallpaper Buddy it's a small Windows utility to download random images from a number of sources. It allows you to save the images, set them as desktop's wallpaper/lockscreen and much more
+Wallpaper Chum it's a small Windows utility to download random images from a number of sources. It allows you to save the images, set them as desktop's wallpaper/lockscreen and much more
 
 ## What it does
 The application downloads images from [BING](https://www.bing.com), [Reddit](https://www.reddit.com), and [DeviantArt](https://www.deviantart.com). The image is stored in a folder of your choice, so it can be used as a wallpaper or lockscreen. _please [read](#-Disclaimers-and-Copyrights-notice) disclaimer for each respective source_
@@ -41,20 +43,20 @@ If you still want to contribute I suggest you work on the current development br
 Please refer to the [contributing](docs/CONTRIBUTING.md) guidelines for further information.
 
 ## Usage
-This is a fully portable application and does not require installation, download the zip archive from the [release](https://github.com/tommasodargenio/wallpaperbuddy/releases) page, unzip in a folder and you are good to go.
+This is a fully portable application and does not require installation, download the zip archive from the [release](https://github.com/tommasodargenio/wallpaperchum/releases) page, unzip in a folder and you are good to go.
 
-Open a command shell in the folder where you have unzipped the archive and type wallpaperbubby without parameters, this will show the help with the list of available parameters and options. For more information please refer to the [wiki](https://github.com/tommasodargenio/wallpaperbuddy/wiki)
+Open a command shell in the folder where you have unzipped the archive and type wallpaperbubby without parameters, this will show the help with the list of available parameters and options. For more information please refer to the [wiki](https://github.com/tommasodargenio/wallpaperchum/wiki)
 
 ### Quick Examples 
 
 Download a random image from deviantArt (`-F D`) wallpapers (`-deviantTopic wallpapers`) topic page, save it to a folder on the desktop (`-saveTo c:\users\johndoe\desktop\wallpapers`), set is as desktop background (`-W`) and lockscreen (`-L`)
-`c:\>wallpaperbuddy.exe -W -L -F D -deviantTopic wallpapers -saveTo c:\users\johndoe\desktop\wallpapers`
+`c:\>wallpaperchum.exe -W -L -F D -deviantTopic wallpapers -saveTo c:\users\johndoe\desktop\wallpapers`
 
 Download a random image from the subrreddit (`-F R`) channel Paintings (`-C Paintings`), make sure the image is in landscape orientation (`-A landscape`) and perform a file analysis (`-SI`) to make sure of this. Last store the file on a folder on the desktop (`-saveTo c:\users\johndoe\desktop\wallpapers`)
-`c:\>wallpaperbuddy.exe -F R -C Paintings -A landscape -SI -saveTo c:\users\johndoe\desktop\wallpapers`
+`c:\>wallpaperchum.exe -F R -C Paintings -A landscape -SI -saveTo c:\users\johndoe\desktop\wallpapers`
 
 Download the daily image from Bing (`-F B`), save it to a folder on the desktop (`-saveTo c:\users\johndoe\desktop\wallpapers`), if the folder doesn't exist create it (`-Y`), rename the file with the today's date (`-R d`), make sure the destination folder contains only max 30 files and delete the oldest (`-D 30`)
-`c:\>wallpaperbuddy.exe -F B -Y -saveTo c:\users\johndoe\desktop\wallpapers -R d -D 30`
+`c:\>wallpaperchum.exe -F B -Y -saveTo c:\users\johndoe\desktop\wallpapers -R d -D 30`
 
 
 # Acknowledgements
