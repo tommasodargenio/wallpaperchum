@@ -76,7 +76,7 @@
   </PropertyGroup>
   <PropertyGroup />
   <PropertyGroup>
-    <ApplicationIcon>bib_icon_1.ico</ApplicationIcon>
+    <ApplicationIcon>WallpaperChum_2v.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>WallpaperChum.Program</StartupObject>
@@ -134,9 +134,7 @@
   <PropertyGroup>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
   </PropertyGroup>
-  <PropertyGroup>
-    <NoWin32Manifest>true</NoWin32Manifest>
-  </PropertyGroup>
+  <PropertyGroup />
   <ItemGroup>
     <Reference Include="Costura, Version=5.3.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Costura.Fody.5.3.0\lib\netstandard1.0\Costura.dll</HintPath>
@@ -213,6 +211,7 @@
   <ItemGroup>
     <Content Include="bib_icon.ico" />
     <Content Include="bib_icon_1.ico" />
+    <Content Include="WallpaperChum_2v.ico" />
     <EmbeddedResource Include="development.env" />
   </ItemGroup>
   <ItemGroup>
