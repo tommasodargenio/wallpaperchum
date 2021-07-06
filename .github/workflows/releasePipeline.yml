@@ -29,14 +29,14 @@ jobs:
     - name: Add msbuild to PATH 
       uses: microsoft/setup-msbuild@v1.0.1      
     - name: Restore NuGet packages
-      run: nuget restore WallpaperBuddy.sln   
+      run: nuget restore WallpaperChum.sln   
       # create .env file with the secrets
     - name: Attach Environment Variables
       uses: iamsauravsharma/create-dotenv@v1.0.0
       with:      
         env-prefix: 'ENV_KEY_'
         file-name: 'development.env'
-        directory: './wallpaperbuddy'
+        directory: './wallpaperchum'
       env: # env available for only this steps        
         ENV_KEY_deviantArtClientId: ${{secrets.DEVIANT_ART_CLIENT_ID}}
         ENV_KEY_deviantArtClientSecret: ${{secrets.DEVIANT_ART_CLIENT_SECRET}}      
@@ -46,7 +46,7 @@ jobs:
     - name: Upload the Build Artifact
       uses: actions/upload-artifact@v2.2.2
       with:
-        name: wallpaperbuddy
+        name: wallpaperchum
         path: '${{env.PUBLISH_PATH_WIN}}'
     - name: 'Get last release tag'
       id: releasetag
@@ -60,7 +60,7 @@ jobs:
     - name: Download the build artifact
       uses: actions/download-artifact@v2.0.8
       with:
-        name: wallpaperbuddy
+        name: wallpaperchum
         path: '${{env.PUBLISH_PATH_LIN}}'            
     - name: Remove PDB
       run: rm -f ${{env.PUBLISH_PATH_LIN}}/*.pdb      
@@ -71,10 +71,10 @@ jobs:
     - name: Verify tag
       run: echo '${{ needs.generate-build.outputs.release-tag }}'
     - name: Prepare package
-      run: zip -r -j '${{env.PUBLISH_PATH_LIN}}/wallpaperbuddy-winx64-${{ needs.generate-build.outputs.release-tag }}.zip' ${{env.PUBLISH_PATH_LIN}}
+      run: zip -r -j '${{env.PUBLISH_PATH_LIN}}/wallpaperchum-winx64-${{ needs.generate-build.outputs.release-tag }}.zip' ${{env.PUBLISH_PATH_LIN}}
     - name: Upload the Package to Release
       uses: skx/github-action-publish-binaries@master
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}            
       with:
-        args: '${{env.PUBLISH_PATH_LIN}}/wallpaperbuddy-winx64-${{ needs.generate-build.outputs.release-tag }}.zip'
+        args: '${{env.PUBLISH_PATH_LIN}}/wallpaperchum-winx64-${{ needs.generate-build.outputs.release-tag }}.zip'
