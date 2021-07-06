@@ -3,16 +3,21 @@ env:
   PUBLISH_PATH_WIN: '${{ github.workspace }}\publish'
   PUBLISH_PATH_LIN: '${{ github.workspace }}/publish'
   ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+  #VERSION_NUMBER: '$($env:GITHUB_REF -replace "refs/tags/v")'
 on:
   release:
     types: [created]
-
+  workflow_dispatch:
 
 jobs:
-  generate:
+  generate-build:
     runs-on: windows-latest
+    outputs:
+      release-tag: ${{ steps.releasetag.outputs.tag }}
     steps:
     - uses: actions/checkout@v2.3.4
+      with:
+        fetch-depth: 0
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:
@@ -42,10 +47,15 @@ jobs:
       uses: actions/upload-artifact@v2.2.2
       with:
         name: wallpaperbuddy
-        path: '${{env.PUBLISH_PATH_WIN}}'      
+        path: '${{env.PUBLISH_PATH_WIN}}'
+    - name: 'Get last release tag'
+      id: releasetag
+      uses: "WyriHaximus/github-action-get-previous-tag@v1"
+      with:
+          fallback: 1.0.0         
   deploy:
     runs-on: ubuntu-latest
-    needs: [generate]
+    needs: [generate-build]
     steps:
     - name: Download the build artifact
       uses: actions/download-artifact@v2.0.8
@@ -53,18 +63,18 @@ jobs:
         name: wallpaperbuddy
         path: '${{env.PUBLISH_PATH_LIN}}'            
     - name: Remove PDB
-      run: rm -f ./*.pdb      
+      run: rm -f ${{env.PUBLISH_PATH_LIN}}/*.pdb      
     - name: Remove XML
-      run: rm -f ./*.xml
+      run: rm -f ${{env.PUBLISH_PATH_LIN}}/*.xml
     - name: Verify download
       run: ls -al '${{env.PUBLISH_PATH_LIN}}' 
-    - name: Verify Version Number
-      run: echo '$($env:GITHUB_REF -replace "refs/tags/v")'
+    - name: Verify tag
+      run: echo '${{ needs.generate-build.outputs.release-tag }}'
     - name: Prepare package
-      run: zip -r -j '${{env.PUBLISH_PATH_LIN}}/wallpaperbuddy-winx64-$($env:GITHUB_REF -replace "refs/tags/v").zip' ${{env.PUBLISH_PATH_LIN}}
+      run: zip -r -j '${{env.PUBLISH_PATH_LIN}}/wallpaperbuddy-winx64-${{ needs.generate-build.outputs.release-tag }}.zip' ${{env.PUBLISH_PATH_LIN}}
     - name: Upload the Package to Release
       uses: skx/github-action-publish-binaries@master
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}            
       with:
-        args: '${{env.PUBLISH_PATH_LIN}}/wallpaperbuddy-winx64-$($env:GITHUB_REF -replace "refs/tags/v").zip'
+        args: '${{env.PUBLISH_PATH_LIN}}/wallpaperbuddy-winx64-${{ needs.generate-build.outputs.release-tag }}.zip'
