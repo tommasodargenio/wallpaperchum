@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 
 
-namespace WallpaperBuddy
+namespace WallpaperChum
 {
     public static class ImageUtilities
     {
@@ -34,16 +34,16 @@ namespace WallpaperBuddy
 
             try
             {
-                try { File.Delete(destPath + Path.DirectorySeparatorChar + "wallpaperbuddytmp"); }
+                try { File.Delete(destPath + Path.DirectorySeparatorChar + "wallpaperchumtmp"); }
                 catch { }
 
                 ServicePointManager.Expect100Continue = true;
                 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-                Client.DownloadFile(url, destPath + Path.DirectorySeparatorChar + "wallpaperbuddytmp");
-                var img = Image.FromFile(destPath + Path.DirectorySeparatorChar + "wallpaperbuddytmp");
+                Client.DownloadFile(url, destPath + Path.DirectorySeparatorChar + "wallpaperchumtmp");
+                var img = Image.FromFile(destPath + Path.DirectorySeparatorChar + "wallpaperchumtmp");
                 var result = new Size(img.Width,img.Height);
                 img.Dispose();
-                try { File.Delete(destPath + Path.DirectorySeparatorChar + "wallpaperbuddytmp"); }
+                try { File.Delete(destPath + Path.DirectorySeparatorChar + "wallpaperchumtmp"); }
                 catch { }
                 
                 return (result);

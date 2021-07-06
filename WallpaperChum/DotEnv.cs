@@ -1,4 +1,4 @@
-﻿namespace WallpaperBuddy
+﻿namespace WallpaperChum
 {
     using System;
     using System.Collections.Generic;
