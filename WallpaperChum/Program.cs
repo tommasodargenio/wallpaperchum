@@ -139,41 +139,42 @@ namespace WallpaperChum
 
   (4):                                      Beware that with an high number, the whole process will be slower. Recommended value to be less than 60
     ")]
-    [VersionOption(appIdentity.DefaultAppIdentity)]
+    [VersionOption(appIdentity.DefaultAppIdentity)]    
     public class Program
     {
         #region Private Properties
-        private string _saveFolder;
-        private string _backupFolder;
-        private string _backupFilename;
+        #nullable disable
+        private string _saveFolder = "";
+        private string _backupFolder = "";
+        private string _backupFilename = "";
         private bool _silent;
         private int _deleteMax;
-        private string _region;
-        private string _rename;
-        private string _renameString;
+        private string _region = "";
+        private string _rename = "";
+        private string _renameString = "";
         private bool _setLockscreen;
         private bool _setWallpaper;                
-        private string _resolutionMin;
-        private string _resolutionMax;
+        private string _resolutionMin = "";
+        private string _resolutionMax = "";
         private bool _createFolders;
         private bool _strongImageValidation;
-        private string _aspect;
-        private string _rssURL;                
+        private string _aspect = "";
+        private string _rssURL = "";                
         private int _userResWMin;
         private int _userResHMin;
         private int _userResWMax;
         private int _userResHMax;
-        private string _channelName;
-        private string _method;
-        private string _rssType;
-        private string _setStaticWallpaper;
-        private string _deviantArtist;
-        private string _deviantTag;
-        private string _deviantTopic;
+        private string _channelName = "";
+        private string _method = "";
+        private string _rssType = "";
+        private string _setStaticWallpaper = "";
+        private string _deviantArtist = "";
+        private string _deviantTag = "";
+        private string _deviantTopic = "";
         private int _maxQtyDownload;
         private int _downloaded;
-        private string _nextCursors;
-        private string _deviantToken;
+        private string _nextCursors = "";
+        private string _deviantToken = "";
         private bool _allowNSFW;
 
         #endregion
@@ -1194,7 +1195,13 @@ namespace WallpaperChum
             getTopicGallery = getTopicGallery.Replace("%topic%", deviantTopic);
             getTopicGallery = getTopicGallery.Replace("%limit%", "24");
 
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+            
+            ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
+
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls
+                                                    | SecurityProtocolType.Tls11
+                                                    | SecurityProtocolType.Tls12
+                                                    | SecurityProtocolType.Ssl3;
 
             if (deviantArtist == null && deviantTag == null && deviantTopic == null)
             {
@@ -1334,6 +1341,12 @@ namespace WallpaperChum
             }
             using (var client = new HttpClient())
             {
+                ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
+
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls
+                                                        | SecurityProtocolType.Tls11
+                                                        | SecurityProtocolType.Tls12
+                                                        | SecurityProtocolType.Ssl3;
                 // try to download the json file containing the channelName subreddit posts
                 var redditUrl = "https://www.reddit.com/r/" + channelName + "/new.json" + limit;
                 var response = await client.GetAsync(redditUrl);
