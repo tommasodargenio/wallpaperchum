@@ -23,8 +23,11 @@
   -F                   [source]:                specify the source from where to download the image
                                                         [B]ing download from Bing Daily Wallpaper
                                                         [R]eddit download from a subreddit, use -C ChannelName to specify the subreddit
-                                                        [D]eviantArt download from a topic on DeviantArt.com, use -C ChannelName to specify the topic
+                                                        [D]eviantArt download from a topic on DeviantArt.com, use one of:
+                                                        --deviant-topic/--deviant-tag/--deviant-artist to specify how to select the image
+                                                        [F]older pick a random image from a folder, use --source-folder to specify the folder
 
+  --source-folder      folder path:             specify the path of the folder to select the image from
   --deviant-artist     artistName:              specify the name of the DeviantArt Artist to download the image from
   --deviant-topic      topic:                   specify the name of the DeviantArt Topic to download the image from
   --deviant-tag        tag:                     specify a tag to filter the DeviantArt wallpapers on
@@ -118,7 +121,7 @@ namespace WallpaperChum
         public const string appRuntimeName = "wallpaperchum";
         public const string appDescription = "Download images from various sources, set them as wallpaper or lockscreen, store in folder and much more";
         public const string appUsage = "Usage: WallpaperChum [options] [-help]";
-        public const string version = "1.0.0-beta.11";
+        public const string version = "1.1.0";
 
         public const string FullVersionToString = appFullName + " v" + version + "\n" + appDescription + "\n\n" + appUsage + "\n\n";
         public const string DefaultAppIdentity = appFullName + " v" + version + "\n" + appDescription;
@@ -144,37 +147,38 @@ namespace WallpaperChum
     {
         #region Private Properties
         #nullable disable
-        private string _saveFolder = "";
-        private string _backupFolder = "";
-        private string _backupFilename = "";
+        private string _saveFolder;
+        private string _backupFolder;
+        private string _backupFilename;
         private bool _silent;
         private int _deleteMax;
-        private string _region = "";
-        private string _rename = "";
-        private string _renameString = "";
+        private string _region;
+        private string _rename;
+        private string _renameString;
         private bool _setLockscreen;
         private bool _setWallpaper;                
-        private string _resolutionMin = "";
-        private string _resolutionMax = "";
+        private string _resolutionMin;
+        private string _resolutionMax;
         private bool _createFolders;
         private bool _strongImageValidation;
-        private string _aspect = "";
-        private string _rssURL = "";                
+        private string _aspect;
+        private string _rssURL;                
         private int _userResWMin;
         private int _userResHMin;
         private int _userResWMax;
         private int _userResHMax;
-        private string _channelName = "";
-        private string _method = "";
-        private string _rssType = "";
-        private string _setStaticWallpaper = "";
-        private string _deviantArtist = "";
-        private string _deviantTag = "";
-        private string _deviantTopic = "";
+        private string _channelName;
+        private string _method;
+        private string _rssType;
+        private string _setStaticWallpaper;
+        private string _deviantArtist;
+        private string _deviantTag;
+        private string _deviantTopic;
         private int _maxQtyDownload;
         private int _downloaded;
-        private string _nextCursors = "";
-        private string _deviantToken = "";
+        private string _nextCursors;
+        private string _deviantToken;
+        private string _sourceFolder;
         private bool _allowNSFW;
 
         #endregion
@@ -196,8 +200,13 @@ namespace WallpaperChum
         [Option("-F", CommandOptionType.SingleValue, Description = "[source]:\t\tspecify the source from where to download the image\n" +
                                "\t\t\t\t\t[B]ing download from Bing Daily Wallpaper\n" +
                                "\t\t\t\t\t[R]eddit download from a subreddit, use -C ChannelName to specify the subreddit\n" +
-                               "\t\t\t\t\t[D]eviantArt download from a topic on DeviantArt.com, use -C ChannelName to specify the topic\n")]
-        public string rssType { get { return _rssType; } set { setRSS(new string[] { "B", "R", "D" }, value); } }
+                               "\t\t\t\t\t[D]eviantArt download from a topic on DeviantArt.com, use one of: \n"+
+                               "\t\t\t\t\t--deviant-topic/--deviant-tag/--deviant-artist to specify how to select the image\n" +
+                               "\t\t\t\t\t[F]older pick a random image from a folder, use --source-folder to specify the folder\n")]
+        public string rssType { get { return _rssType; } set { setRSS(new string[] { "B", "R", "D", "F"}, value); } }
+
+        [Option("--source-folder", CommandOptionType.SingleValue, Description = "folder path:\t\tspecify the path of the folder to select the image from")]
+        public string sourceFolder{ get { return _sourceFolder; } set { _sourceFolder = value; } }
 
         [Option ("--deviant-artist", CommandOptionType.SingleValue, Description = "artistName:\t\tspecify the name of the DeviantArt Artist to download the image from")]
         public string deviantArtist { get { return _deviantArtist; } set { setDeviantArtist(value); } }
@@ -562,6 +571,11 @@ namespace WallpaperChum
                     case "d":
                         _rssURL = DEVIANTART_BASE_URL;
                         _rssType = "DEVIANTART";
+                        break;
+                    case "folder":
+                    case "f":
+                        _rssType = "FOLDER";
+                        _rssURL = "";
                         break;
                     default:
                         _rssType = "";
@@ -1020,14 +1034,14 @@ namespace WallpaperChum
             }
         }
 
-        public bool extractImage(string URL, string title, int[] imageResSet = null)
+        public bool extractImage(string URL, string title, int[] imageResSet = null, bool isLocalFile = false)
         {            
             // check if URL is valid
             if (URL == "" || URL == null)
             {
                 return false;
             }
-            if (!Uri.IsWellFormedUriString(URL, UriKind.Absolute))
+            if (!isLocalFile && !Uri.IsWellFormedUriString(URL, UriKind.Absolute))
             {
                 return false;
             }
@@ -1066,15 +1080,25 @@ namespace WallpaperChum
                 {
                     // tries to get the image resolution from the remote file directly    
                     var imageSize = new System.Drawing.Size(0, 0);
-                    // attempt #1 - get image size via image file headers
-                    var imageSizeAlt = ImageUtilities.GetWebImageSize_Fast(new Uri(URL));
-                    imageSize = imageSizeAlt.GetAwaiter().GetResult();
 
-                    if (imageSize.IsEmpty)
+                    // get image size from the local file
+                    if (isLocalFile)
                     {
-                        // attempt #2 - get image size downloading the whole file, this will be much slower
-                        imageSize = ImageUtilities.GetWebImageSize_Slow(URL);
+                        imageSize = ImageUtilities.GetLocalImageSize(URL);
+                    } 
+                    else
+                    {
+                        // attempt #1 - get image size via image file headers
+                        var imageSizeAlt = ImageUtilities.GetWebImageSize_Fast(new Uri(URL));
+                        imageSize = imageSizeAlt.GetAwaiter().GetResult();
+
+                        if (imageSize.IsEmpty)
+                        {
+                            // attempt #2 - get image size downloading the whole file, this will be much slower
+                            imageSize = ImageUtilities.GetWebImageSize_Slow(URL);
+                        }
                     }
+
 
                     imageResW = imageSize.Width;
                     imageResH = imageSize.Height;
@@ -1125,6 +1149,19 @@ namespace WallpaperChum
             }
             else if (URL != "")
             {
+                // if local file check if it exsists
+                if (isLocalFile)
+                {
+                    if (File.Exists(URL))
+                    {
+                        imagesCandidates.Add(URL);
+                        return true;
+                    } 
+                    else
+                    {
+                        return false;
+                    }
+                }
                 // check if the url contains an image by looking at the extension                                
                 if (validateImage(URL))
                 {
@@ -1424,6 +1461,41 @@ namespace WallpaperChum
                 }
             }
         }
+        /// <summary>
+        /// Get image from a specified folder on the computer         
+        /// </summary>
+        public void processFolderPickup()
+        {
+            // check if folder exists
+            if (!Directory.Exists(_sourceFolder))
+            {
+                // Exit with error
+                writeLog((int)LogType.ERROR, "The specified path (" + _sourceFolder + ") does not exist!");
+                Environment.Exit(101);
+            }
+
+            string[] files = Directory.GetFiles(_sourceFolder);
+
+            // check if there are files in the directory
+            if (files.Length <= 0)
+            {
+                // Exit with error
+                writeLog((int)LogType.ERROR, "The specified path (" + _sourceFolder + ") is empty!");
+                Environment.Exit(101);
+            }
+
+            foreach( string imageFile in files )
+            {
+                // check if the image is a good candidate (checking image format, resolution, etc.), if so add to the imagesCandidates array
+                if (extractImage(imageFile, Path.GetFileNameWithoutExtension(imageFile), null, true))
+                {
+                    
+                    // add the image title, this may be used as filename as well
+                    imagesCaptions.Add(Path.GetFileNameWithoutExtension(imageFile));
+                }
+            }
+        }
+
         /*
             Old method to retrieve Reddit images via RSS Feed which is in XML format
             This is now being replaced by processRedditJSON, keeping the method here in case we
@@ -1516,9 +1588,10 @@ namespace WallpaperChum
                             }
                             
                         }
-                    }
-                     
-                        
+                    }   
+                    break;
+                case "FOLDER":
+                    fileName = Path.GetFileName(URL);
                     break;
             }
             return fileName;
@@ -1539,7 +1612,16 @@ namespace WallpaperChum
                 writeLog((int)LogType.WARNING, "Source has not been specified, there is nothing else to do");
                 Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
             }
-
+            // check if the user has passed the folder name when using Folder as source type, if not exit with error
+            if (rssType == "FOLDER")
+            {
+                if (_sourceFolder == "" || _sourceFolder == null)
+                {
+                    // Exit with error
+                    writeLog((int)LogType.ERROR, "You must specify a folder path (option --source-folder folderPath) when using Folder as source and it cannot be blank");
+                    Environment.Exit((int)ExitCode.MISSING_REQUIRED_PARAMETER);
+                }
+            }
             // check if the user has passed the channel name when using Reddit as source type, if not exit with error
             if (rssType == "REDDIT")
             {
@@ -1607,6 +1689,11 @@ namespace WallpaperChum
             {
                 writeLog((int)LogType.INFO, "Start RSS download from Reddit channel " + channelName);
                 await processRedditJSON();
+            }
+            else if(rssType == "FOLDER") // select image from _sourceFolder
+            {
+                writeLog((int)LogType.INFO, "Selecting image from Folder: " + _sourceFolder);
+                processFolderPickup();
             }
             else // download image from BING
             {
@@ -1710,7 +1797,24 @@ namespace WallpaperChum
                     // Download the file only if it doesn't exists already within the same path and filename
                     if (!File.Exists(destPath + Path.DirectorySeparatorChar + destFileName) && rename != "sO")
                     {
-                        Client.DownloadFile(imagesCandidates[idx], destPath + Path.DirectorySeparatorChar + destFileName);
+                        if (rssType == "FOLDER")
+                        {
+                            try
+                            {
+                                File.Copy(imagesCandidates[idx], destPath + Path.DirectorySeparatorChar + destFileName);
+                            }
+                            catch(Exception ex)
+                            {
+                                writeLog((int)LogType.ERROR, "(" + getExceptionLineNumber(ex) + ") Could not copy the file " + imagesCandidates[idx] + " or save it as: " + destFileName);
+                                imagesCandidates.RemoveAt(idx);
+                                Environment.Exit((int)ExitCode.EXCEPTION_ERROR);
+                            }
+                            
+                        } else
+                        {
+                            Client.DownloadFile(imagesCandidates[idx], destPath + Path.DirectorySeparatorChar + destFileName);
+                        }
+                        
                         writeLog((int)LogType.INFO, "Image saved at: " + destPath + Path.DirectorySeparatorChar + destFileName);
                     } else
                     {
