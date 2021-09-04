@@ -1795,13 +1795,13 @@ namespace WallpaperChum
                     ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
                     // Download the file only if it doesn't exists already within the same path and filename
-                    if (!File.Exists(destPath + Path.DirectorySeparatorChar + destFileName) && rename != "sO")
+                    if (!File.Exists(destPath + Path.DirectorySeparatorChar + destFileName) || rename == "sO")
                     {
                         if (rssType == "FOLDER")
                         {
                             try
                             {
-                                File.Copy(imagesCandidates[idx], destPath + Path.DirectorySeparatorChar + destFileName);
+                                File.Copy(imagesCandidates[idx], destPath + Path.DirectorySeparatorChar + destFileName, true);
                             }
                             catch(Exception ex)
                             {
