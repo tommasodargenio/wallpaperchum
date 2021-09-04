@@ -71,6 +71,29 @@ namespace WallpaperChum
         };
 
         /// <summary>
+        /// Retrieve the dimensions / resolution of an image stored on the local file system
+        /// </summary>
+        public static Size GetLocalImageSize(string filePath)
+        {
+            int height = 0;
+            int width = 0;
+
+            if (File.Exists(filePath))
+            {
+                using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    using (var image = Image.FromStream(fileStream, false, false))
+                    {
+                        height = image.Height;
+                        width = image.Width;
+                    }
+                }
+            }
+
+            return new Size(width, height);
+        }
+
+        /// <summary>
         /// Retrieve the dimensions of an online image, downloading as little as possible
         /// </summary>
         public static async Task<Size> GetWebImageSize_Fast(Uri uri)
@@ -100,7 +123,7 @@ namespace WallpaperChum
 
             return new Size(0, 0);
         }
-
+        #nullable enable
         private static async Task<byte[]?> GetSomeBytes(Uri uri, int startRange, int endRange)
         {
             var request = new HttpRequestMessage { RequestUri = uri };
